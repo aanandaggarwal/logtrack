@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>LogTrack</title>
   <!-- Tailwind CSS & Font Awesome -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Century+Gothic&display=swap" rel="stylesheet">
   <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css" />
+  <!-- Supabase Client Library (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 </head>
 <body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
   <header class="p-4 border-b border-gray-800 flex justify-between items-center">
@@ -63,39 +65,18 @@
       </button>
     </div>
 
-    <!-- New Log Entry Form -->
+    <!-- New / Edit Log Entry Form -->
     <div id="logEntryForm" class="hidden bg-gray-800 rounded p-6 mb-6 fade-in">
-      <h2 class="text-xl font-semibold mb-4 text-purple-400 flex items-center">
-        <i class="fas fa-file-alt mr-2"></i> New Log Entry
-      </h2>
-      <form id="entryForm" class="space-y-4">
-        <!-- Basic Info -->
-        <div class="mb-4">
-          <label for="date" class="block text-sm font-semibold mb-2 text-gray-300 font-mono">Date</label>
-          <input type="date" id="date" name="date" value="${new Date().toISOString().split('T')[0]}"
-                 class="bg-gray-700 text-white p-3 rounded w-full font-mono" />
-        </div>
-        <div class="mb-4">
-          <label for="daily-notes" class="block text-sm font-semibold mb-2 text-gray-300 font-mono">Daily Notes</label>
-          <textarea id="daily-notes" name="daily-notes" class="bg-gray-700 text-white p-3 rounded w-full font-mono"></textarea>
-        </div>
-        <!-- Container for Log Entry Tracks -->
-        <div id="logEntryTracksContainer"></div>
-        <!-- Button to add a new custom track -->
-        <button id="addNewTrackButton" type="button" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold flex items-center">
-          <i class="fas fa-plus mr-2"></i> Add New Track
-        </button>
-      </form>
-      <button id="saveEntry" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold flex items-center">
-        <i class="fas fa-plus-circle mr-2"></i> Save Log Entry
-      </button>
+      <!-- Content generated dynamically -->
     </div>
 
-    <!-- Search Bar and Log Entries -->
-    <div class="mb-4">
+    <!-- Log Entries Display -->
+    <div id="logEntries" class="space-y-4"></div>
+
+    <!-- Search Bar -->
+    <div class="mt-4">
       <input type="text" id="searchBar" class="bg-gray-700 text-white p-3 rounded w-full font-mono" placeholder="🔍 Search logs..." />
     </div>
-    <div id="logEntries" class="space-y-4"></div>
   </main>
 
   <!-- Custom Script -->
