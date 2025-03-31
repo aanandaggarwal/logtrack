@@ -126,6 +126,13 @@ document.getElementById('forgotPasswordLink')?.addEventListener('click', async (
 });
 
 /***** Cloud Data Functions *****/
+function waitUntilMinLoadingTime() {
+  const minLoadingTime = 2000; // 3 seconds
+  const elapsed = Date.now() - loadingStartTime;
+  const remaining = Math.max(0, minLoadingTime - elapsed);
+  return new Promise(resolve => setTimeout(resolve, remaining));
+}
+
 function hideLoadingScreen() {
   const loadingScreen = document.getElementById('loadingScreen');
   loadingScreen.classList.add('animate__fadeOut');
@@ -133,32 +140,45 @@ function hideLoadingScreen() {
 }
 
 async function loadCloudData() {
+  let fetchedData = null;
+  
   if (!currentUserId) {
     console.log("No current user found, skipping cloud data load.");
-    hideLoadingScreen();
-    return;
+  } else {
+    const { data, error } = await supabaseClient
+      .from('logtrack')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .maybeSingle();
+    if (error) {
+      console.error("Error fetching cloud data:", error);
+    } else {
+      fetchedData = data;
+    }
   }
-  const { data, error } = await supabaseClient
-    .from('logtrack')
-    .select('*')
-    .eq('user_id', currentUserId)
-    .maybeSingle();
-  if (error) {
-    console.error("Error fetching cloud data:", error);
-    hideLoadingScreen();
-    return;
-  }
-  if (data) {
-    template = data.template || [];
-    logs = data.logs || [];
-    cloudDocId = data.id;
+
+  // Wait until at least 3 seconds have passed since page load
+  await waitUntilMinLoadingTime();
+
+  // Process the fetched data if available
+  if (fetchedData) {
+    template = fetchedData.template || [];
+    logs = fetchedData.logs || [];
+    cloudDocId = fetchedData.id;
     renderTemplateTracks();
     renderLogEntries();
-    document.getElementById('tutorial').classList.add('hidden');
+    // Show tutorial only if both template and logs are empty
+    if (template.length === 0 && logs.length === 0) {
+      // Reveal the tutorial popup after data processing
+      document.getElementById('tutorial').classList.remove('hidden');
+    } else {
+      document.getElementById('tutorial').classList.add('hidden');
+    }
   } else {
     console.log("No cloud data found; start by creating a new template.");
   }
-  // Hide the loading screen after everything is loaded.
+  
+  // Finally, hide the loading screen
   hideLoadingScreen();
 }
 
@@ -914,12 +934,9 @@ document.getElementById('logo').addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
   // Enhanced landing animation already set in index.html #loadingScreen
   // After a short delay (simulate fetching logs), hide the loading screen.
-  setTimeout(() => {
-    const loadingScreen = document.getElementById('loadingScreen');
-    loadingScreen.classList.add('animate__fadeOut');
-    setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
-  }, 10500); // increased delay from 1500ms to 2500ms
-  
+
+  loadingStartTime = Date.now();
+
   checkAuth();
   
   document.getElementById('closeTutorial').addEventListener('click', () => {
@@ -1051,8 +1068,4 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
     showFeedback('Logs Exported Successfully!', 'download');
   });
-  loadCloudData();
-  const loadingScreen = document.getElementById('loadingScreen');
-  loadingScreen.classList.add('animate__fadeOut');
-  setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
 });

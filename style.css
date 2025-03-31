@@ -40,6 +40,8 @@ select {
   color: #fff;
   padding: 0.5rem;
   border-radius: 0.3rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Custom Drag Handle */
@@ -64,10 +66,11 @@ button:hover { transform: scale(1.02); }
 .track-container,
 .unit-container,
 .field-container,
-.custom-track,
-.custom-unit,
-.custom-field,
-.log-entry-card { border-radius: 0.5rem; }
+.log-entry-card,
+#logEntryForm,
+#templateBuilder {
+  border-radius: 0.5rem;
+}
 
 /* Log Entry Card Redesign */
 .log-entry-card {
@@ -83,28 +86,14 @@ button:hover { transform: scale(1.02); }
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
 }
 
-/* Table Styles */
-.log-entry-card table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: monospace;
-}
-.log-entry-card th,
-.log-entry-card td {
-  padding: 0.5rem;
-  border-bottom: 1px solid #444;
-  text-align: left;
-}
-
-/* Responsive Layout */
-@media (max-width: 640px) {
-  header, main { padding: 1rem; }
-  .log-entry-card { padding: 1rem; }
-}
-
 /* Modal & Loading Screen Styles */
-#loadingScreen, #logoutModal, #feedbackModal, #exportModal {
+#loadingScreen,
+#logoutModal,
+#feedbackModal,
+#exportModal {
   transition: opacity 0.5s ease;
+  width: 100vw;
+  height: 100vh;
 }
 #loadingScreen {
   display: flex;
@@ -152,16 +141,167 @@ button:hover { transform: scale(1.02); }
   100% { transform: scale(1); }
 }
 
-/* Mobile Responsiveness for Template Builder */
-@media (max-width: 768px) {
-  #templateBuilder { padding: 1rem; }
-  #templateBuilder .track-container { margin: 0.5rem 0; padding: 1rem; overflow: visible; }
-  #templateBuilder .track-container .handle-track { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-  #templateBuilder .track-container .handle-track input { margin-bottom: 0.5rem; }
-  #templateBuilder .track-container .units-container { margin-top: 1rem; }
-  #templateBuilder .track-container .units-container .unit-container { padding: 0.75rem; margin-bottom: 1rem; border-width: 1px; }
-  #templateBuilder .track-container .units-container .unit-container > div.flex { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-  #templateBuilder .track-container .units-container .unit-container input { margin-bottom: 0.5rem; }
-  #templateBuilder .track-container .units-container .unit-container button { align-self: flex-end; }
-  #templateBuilder button { padding: 0.75rem; font-size: 0.9rem; }
+/* Mobile Responsiveness */
+/* General adjustments for mobile devices */
+@media (max-width: 640px) {
+  main {
+    padding: 1rem;
+  }
+  .log-entry-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  /* Make buttons larger and inputs more spaced out */
+  button {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+  input, textarea, select {
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
 }
+
+/* Enhanced Template Builder Mobile Styles */
+@media (max-width: 768px) {
+  #templateBuilder {
+    padding: 1rem;
+  }
+  #templateBuilder .track-container {
+    margin: 0.5rem 0;
+    padding: 1rem;
+  }
+  #templateBuilder .track-container .handle-track {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  #templateBuilder .track-container .handle-track input {
+    margin-bottom: 0.5rem;
+  }
+  #templateBuilder .track-container .units-container {
+    margin-top: 1rem;
+  }
+  #templateBuilder .track-container .units-container .unit-container {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-width: 1px;
+  }
+  #templateBuilder .track-container .units-container .unit-container > div.flex {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  #templateBuilder .track-container .units-container .unit-container input,
+  #templateBuilder .track-container .units-container .unit-container select {
+    margin-bottom: 0.5rem;
+  }
+  #templateBuilder .track-container .units-container .unit-container button {
+    align-self: flex-end;
+  }
+}
+
+/* New Log Entry/Edit Form Mobile Styles */
+@media (max-width: 640px) {
+  #logEntryForm {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+  #logEntryForm form > div {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Log Display Cards Mobile Adjustments */
+@media (max-width: 640px) {
+  .log-entry-card {
+    padding: 1rem;
+    margin: 0.75rem 0;
+  }
+  .log-entry-card h3,
+  .log-entry-card p,
+  .log-entry-card h4 {
+    font-size: 1rem;
+  }
+}
+
+/* -- Enhance Dynamic Field Stacking on Mobile -- */
+@media (max-width: 640px) {
+  /* Ensure that each dynamic field entry stacks vertically */
+  .field-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  /* Stack the input for field label, select and options vertically */
+  .field-entry input.field-label-input,
+  .field-entry select.field-type,
+  .field-entry input.field-options,
+  .field-entry .field-input {
+    width: 100%;
+    margin: 0;
+  }
+  /* In case the container was set as row on larger screens, force column */
+  .field-container {
+    flex-direction: column !important;
+    gap: 0.5rem;
+  }
+  
+  /* For Template Builder unit containers */
+  #templateBuilder .unit-container {
+    padding: 0.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  /* For new log entry dynamic fields container adjustments */
+  #logEntryForm form > div {
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Ensure select option box (for dynamic "select" fields) looks clean */
+  .field-options {
+    padding: 0.5rem;
+    border-radius: 0.3rem;
+    border: 1px solid #444;
+    background-color: #333;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Header: vertical stacking for logo and button row */
+  header {
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+  }
+
+  /* Hide text labels to show icon only */
+  .logtrack-label,
+  .btn-label {
+    display: none;
+  }
+
+  /* Center the logo icon and add spacing below it */
+  #logo {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Button container: horizontal row with nice spacing */
+  header > div.flex {
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  /* Style header buttons as rounded rectangles */
+  .header-btn {
+    padding: 0.5rem 2.5rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
