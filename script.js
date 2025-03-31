@@ -350,6 +350,10 @@ function addDynamicTrack(trackData = null, container = null) {
     <button class="add-unit bg-blue-500 px-3 py-1 rounded mt-3"><i class="fas fa-plus"></i> Add Unit</button>`;
 
   tracksContainer.appendChild(trackHtml);
+  if (window.innerWidth < 768) {
+    trackHtml.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+  
 
   trackHtml.querySelector('.delete-track').onclick = (e) => {
     e.preventDefault();
@@ -381,7 +385,10 @@ function renderDynamicUnit(unitsContainer, unitData = null) {
     <button class="add-field bg-green-500 px-3 py-1 rounded mt-2"><i class="fas fa-plus"></i> Add Field</button>`;
 
   unitsContainer.appendChild(unitHtml);
-
+  if (window.innerWidth < 768) {
+    trackHtml.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+  
   const fieldsContainer = unitHtml.querySelector('.fields-container');
 
   if (unitData && unitData.fields) {
@@ -416,7 +423,10 @@ function renderDynamicField(fieldsContainer, fieldData = null) {
     <div class="mt-2 field-input"></div>`;
 
   fieldsContainer.appendChild(fieldHtml);
-
+  if (window.innerWidth < 768) {
+    fieldHtml.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+  
   const typeSelect = fieldHtml.querySelector('.field-type');
   const optionsInput = fieldHtml.querySelector('.field-options');
   const fieldInputContainer = fieldHtml.querySelector('.field-input');
@@ -836,6 +846,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     renderTemplateTracks();
     saveCloudData();
+  
+    // Auto-scroll to the newly added track on mobile
+    if (window.innerWidth < 768) {
+      const lastTrack = document.querySelector('#templateTracks .track-container:last-child');
+      if (lastTrack) {
+        lastTrack.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
   });
   document.getElementById('templateTracks').addEventListener('click', (e) => {
     if (e.target.closest('.add-unit-button')) {
@@ -851,7 +869,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       renderTemplateTracks();
       saveCloudData();
-    }
+    
+      // Auto-scroll to the modified track container on mobile
+      if (window.innerWidth < 768) {
+        const trackContainer = document.querySelector(`#templateTracks .track-container[data-id="${trackIndex}"]`);
+        if (trackContainer) {
+          trackContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      }
+    }    
     if (e.target.closest('.add-field-button')) {
       updateTemplateFromDOM();
       const trackIndex = e.target.closest('.add-field-button').getAttribute('data-track-index');
@@ -863,7 +889,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       renderTemplateTracks();
       saveCloudData();
-    }
+    
+      // Auto-scroll to the modified track container on mobile
+      if (window.innerWidth < 768) {
+        const trackContainer = document.querySelector(`#templateTracks .track-container[data-id="${trackIndex}"]`);
+        if (trackContainer) {
+          trackContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      }
+    }    
     if (e.target.closest('.delete-track-button')) {
       updateTemplateFromDOM();
       const trackIndex = e.target.closest('.delete-track-button').getAttribute('data-track-index');

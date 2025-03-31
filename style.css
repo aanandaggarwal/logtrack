@@ -250,3 +250,58 @@ button:active {
   transform: scale(0.97);
 }
 
+/* NEW: Mobile Responsiveness for Template Builder */
+@media (max-width: 768px) {
+  /* Template Builder Container Adjustments */
+  #templateBuilder {
+    padding: 1rem;
+  }
+  
+  /* Template Track Container Adjustments */
+  #templateBuilder .track-container {
+    margin: 0.5rem 0;
+    padding: 1rem;
+    /* Allow icons to overflow if needed (see separate overflow rules) */
+    overflow: visible;
+  }
+  
+  /* Stack header elements vertically with proper spacing */
+  #templateBuilder .track-container .handle-track {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  #templateBuilder .track-container .handle-track input {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Adjust units container to add more breathing room */
+  #templateBuilder .track-container .units-container {
+    margin-top: 1rem;
+  }
+  
+  /* Unit Container Adjustments */
+  #templateBuilder .track-container .units-container .unit-container {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-width: 1px;
+  }
+  /* Ensure inner flex elements stack vertically */
+  #templateBuilder .track-container .units-container .unit-container > div.flex {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  #templateBuilder .track-container .units-container .unit-container input {
+    margin-bottom: 0.5rem;
+  }
+  #templateBuilder .track-container .units-container .unit-container button {
+    align-self: flex-end;
+  }
+  
+  /* Button adjustments for better tapping */
+  #templateBuilder button {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+}
