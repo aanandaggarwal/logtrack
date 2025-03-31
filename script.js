@@ -14,7 +14,6 @@ function showFeedback(message, type = 'success', duration = 1500) {
   const feedbackModal = document.getElementById('feedbackModal');
   const feedbackMessage = document.getElementById('feedbackMessage');
   const feedbackIcon = document.getElementById('feedbackIcon');
-
   feedbackMessage.textContent = message;
   if (type === 'success') {
     feedbackIcon.className = 'fas fa-check-circle text-5xl text-green-400 mb-4';
@@ -34,18 +33,14 @@ function showFeedback(message, type = 'success', duration = 1500) {
 function confirmLogDeletion(logIndex) {
   const deleteConfirmModal = document.getElementById('deleteConfirmModal');
   deleteConfirmModal.classList.remove('hidden');
-
   const confirmBtn = document.getElementById('confirmDeleteBtn');
   const cancelBtn = document.getElementById('cancelDeleteBtn');
-
   confirmBtn.onclick = null;
   cancelBtn.onclick = null;
-
   confirmBtn.onclick = () => {
     performLogDeletion(logIndex);
     deleteConfirmModal.classList.add('hidden');
   };
-
   cancelBtn.onclick = () => {
     deleteConfirmModal.classList.add('hidden');
   };
@@ -62,7 +57,6 @@ function performLogDeletion(logIndex) {
 async function checkAuth() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   const wasJustRedirected = sessionStorage.getItem('redirectLogin');
-
   if (session) {
     currentUserId = session.user.id;
     document.getElementById('authContainer').classList.add('hidden');
@@ -87,7 +81,6 @@ document.getElementById('loginButton').addEventListener('click', async () => {
   if (error) alert(error.message);
   else showFeedback('Successfully Signed In!', 'success');
 });
-
 document.getElementById('signupButton').addEventListener('click', async () => {
   const email = document.getElementById('signupEmail').value;
   const password = document.getElementById('signupPassword').value;
@@ -133,8 +126,18 @@ document.getElementById('forgotPasswordLink')?.addEventListener('click', async (
 });
 
 /***** Cloud Data Functions *****/
+function hideLoadingScreen() {
+  const loadingScreen = document.getElementById('loadingScreen');
+  loadingScreen.classList.add('animate__fadeOut');
+  setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
+}
+
 async function loadCloudData() {
-  if (!currentUserId) return;
+  if (!currentUserId) {
+    console.log("No current user found, skipping cloud data load.");
+    hideLoadingScreen();
+    return;
+  }
   const { data, error } = await supabaseClient
     .from('logtrack')
     .select('*')
@@ -142,6 +145,7 @@ async function loadCloudData() {
     .maybeSingle();
   if (error) {
     console.error("Error fetching cloud data:", error);
+    hideLoadingScreen();
     return;
   }
   if (data) {
@@ -154,7 +158,10 @@ async function loadCloudData() {
   } else {
     console.log("No cloud data found; start by creating a new template.");
   }
+  // Hide the loading screen after everything is loaded.
+  hideLoadingScreen();
 }
+
 
 async function saveCloudData() {
   const dataToSave = { template, logs, user_id: currentUserId };
@@ -252,7 +259,6 @@ function renderTemplateTracks() {
   initSortableTemplate();
   
   // Attach focus events for clearing default names:
-  // For track names:
   document.querySelectorAll('#templateTracks input[data-track-index]').forEach(input => {
     input.addEventListener('focus', function() {
       if (this.value === 'Prep Track Name' || this.value === 'New Prep Track' || this.value === 'Unnamed Track') {
@@ -260,7 +266,6 @@ function renderTemplateTracks() {
       }
     });
   });
-  // For unit labels:
   document.querySelectorAll('#templateTracks input[data-unit-index]').forEach(input => {
     input.addEventListener('focus', function() {
       if (this.value === 'Unit Label' || this.value === 'New Unit' || this.value === 'Unnamed Unit') {
@@ -268,7 +273,6 @@ function renderTemplateTracks() {
       }
     });
   });
-  // For field labels:
   document.querySelectorAll('#templateTracks .field-label').forEach(input => {
     input.addEventListener('focus', function() {
       if (this.value === 'Field Name' || this.value === 'New Field' || this.value === 'Unnamed Field') {
@@ -277,7 +281,6 @@ function renderTemplateTracks() {
     });
   });
 }
-
 
 function initSortableTemplate() {
   const container = document.getElementById('templateTracks');
@@ -288,12 +291,6 @@ function initSortableTemplate() {
 }
 
 /***** New / Edit Log Entry Form Functions *****/
-
-/**
- * Renders the New or Edit log entry form.
- *   - "new" mode loads a deep copy of the template. Prefilled tracks/fields are rendered as static text (non-editable) with delete options.
- *   - "edit" mode loads the saved log entry so all track names, field labels/types, and values are fully editable.
- */
 function renderLogEntryForm(mode = 'new', logData = null) {
   const formContainer = document.getElementById('logEntryForm');
   formContainer.innerHTML = `
@@ -356,10 +353,7 @@ function renderLogEntryForm(mode = 'new', logData = null) {
   }
 }
 
-
 /***** Helper Functions for New Log Entry *****/
-
-// Render tracks for "new" mode: use a deep copy of the template where prefilled items are non-editable.
 function renderTracksForNew() {
   const container = document.getElementById('tracksContainer');
   container.innerHTML = '';
@@ -368,16 +362,16 @@ function renderTracksForNew() {
     const trackHtml = document.createElement('div');
     trackHtml.className = 'track-entry bg-gray-800 p-4 rounded mb-6 shadow-md animate__animated animate__fadeInUp';
     trackHtml.innerHTML = `
-    <div class="flex justify-between items-center mb-2">
-      <div class="flex items-center">
-        <i class="fas fa-dumbbell text-purple-400 mr-2"></i>
-        <span class="font-semibold text-purple-300 text-lg prefilled-track-label">${track.label}</span>
+      <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center">
+          <i class="fas fa-dumbbell text-purple-400 mr-2"></i>
+          <span class="font-semibold text-purple-300 text-lg prefilled-track-label">${track.label}</span>
+        </div>
+        <button type="button" class="delete-track text-red-500"><i class="fas fa-trash"></i></button>
       </div>
-      <button type="button" class="delete-track text-red-500"><i class="fas fa-trash"></i></button>
-    </div>
-    <div class="units-container space-y-4"></div>
-    <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">Add Unit</button>
-  `;  
+      <div class="units-container space-y-4"></div>
+      <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">Add Unit</button>
+    `;
     trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
       e.preventDefault();
       trackHtml.classList.add('animate__fadeOut');
@@ -395,7 +389,6 @@ function renderTracksForNew() {
   });
 }
 
-// Render a prefilled unit for "new" mode: its label and fields are static (only delete option available)
 function renderPrefilledUnitNew(unitsContainer, unitData) {
   const unitHtml = document.createElement('div');
   unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeIn relative';
@@ -427,7 +420,6 @@ function addDynamicTrack(container = null) {
   
   let newTrack;
   if (template.length > 0) {
-    // Clone the first track but only use its first unit.
     let defaultTrack = JSON.parse(JSON.stringify(template[0]));
     newTrack = {
       label: defaultTrack.label,
@@ -456,7 +448,6 @@ function addDynamicTrack(container = null) {
   
   const trackHtml = document.createElement('div');
   trackHtml.className = 'track-entry bg-gray-800 p-4 rounded mb-6 shadow-md animate__animated animate__fadeInUp';
-  
   trackHtml.innerHTML = `
     <div class="flex justify-between items-center mb-2">
       <input type="text" placeholder="Track Name" class="track-label bg-gray-700 p-2 rounded flex-grow mr-2" value="">
@@ -465,27 +456,20 @@ function addDynamicTrack(container = null) {
     <div class="units-container"></div>
     <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">Add Unit</button>
   `;
-  
-  // Clear default text on focus:
   const trackInput = trackHtml.querySelector('.track-label');
   trackInput.addEventListener('focus', function() {
     if (this.value === 'Track Name' || this.value === 'New Track' || this.value.trim() === '') {
       this.value = '';
     }
   });
-  
   tracksContainer.appendChild(trackHtml);
-  // Autoscroll new track into view:
   trackHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  
   const unitsContainer = trackHtml.querySelector('.units-container');
   if (newTrack.units && newTrack.units.length > 0) {
     newTrack.units.forEach(unit => {
       renderDynamicUnit(unitsContainer, unit);
     });
   }
-  
-  // Bind the "Add Unit" button inside the new track:
   trackHtml.querySelector('.add-unit').addEventListener('click', (e) => {
     e.preventDefault();
     renderDynamicUnit(unitsContainer);
@@ -494,8 +478,6 @@ function addDynamicTrack(container = null) {
       newUnit.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   });
-  
-  // Bind delete for the track:
   trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
     e.preventDefault();
     trackHtml.classList.add('animate__fadeOut');
@@ -503,7 +485,6 @@ function addDynamicTrack(container = null) {
   });
 }
 
-// Add a dynamic, fully editable unit to the given container (for new log entry or when user adds a new unit)
 function addDynamicUnit(unitsContainer) {
   const unitHtml = document.createElement('div');
   unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeIn relative';
@@ -515,40 +496,30 @@ function addDynamicUnit(unitsContainer) {
     <div class="fields-container"></div>
     <button type="button" class="add-field bg-green-500 px-3 py-1 rounded mt-2"><i class="fas fa-plus"></i> Add Field</button>
   `;
-  
-  // Clear default text on focus:
   const unitInput = unitHtml.querySelector('.unit-label');
   unitInput.addEventListener('focus', function() {
     if (this.value === 'Unit Label' || this.value === 'New Unit' || this.value.trim() === '') {
       this.value = '';
     }
   });
-  
   unitHtml.querySelector('.delete-unit').addEventListener('click', (e) => {
     e.preventDefault();
     unitHtml.classList.add('animate__fadeOut');
     setTimeout(() => unitHtml.remove(), 300);
   });
-  
   const fieldsContainer = unitHtml.querySelector('.fields-container');
   unitHtml.querySelector('.add-field').addEventListener('click', (e) => {
     e.preventDefault();
     renderDynamicField(fieldsContainer);
-    // Autoscroll new field into view:
     const newField = fieldsContainer.lastElementChild;
     if (newField) {
       newField.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   });
-  
   unitsContainer.appendChild(unitHtml);
-  // Autoscroll new unit into view:
   unitHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-
-
-// Render an individual unit in edit mode; its label and fields are fully editable.
 function renderUnitEdit(unitsContainer, unitData) {
   const unitHtml = document.createElement('div');
   unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeIn relative';
@@ -593,28 +564,21 @@ function renderTracksForEdit(tracks) {
       <div class="units-container space-y-4"></div>
       <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">Add Unit</button>
     `;
-    
-    // Clear default text on focus:
     const trackInput = trackHtml.querySelector('.track-label');
     trackInput.addEventListener('focus', function() {
       if (this.value === 'Track Name' || this.value === 'New Track' || this.value.trim() === '') {
         this.value = '';
       }
     });
-    
-    // Delete button event:
     trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
       e.preventDefault();
       trackHtml.classList.add('animate__fadeOut');
       setTimeout(() => trackHtml.remove(), 300);
     });
-    
     const unitsContainer = trackHtml.querySelector('.units-container');
     track.units.forEach(unit => {
       renderUnitEdit(unitsContainer, unit);
     });
-    
-    // Bind "Add Unit" button:
     trackHtml.querySelector('.add-unit').addEventListener('click', (e) => {
       e.preventDefault();
       addDynamicUnit(unitsContainer);
@@ -623,15 +587,11 @@ function renderTracksForEdit(tracks) {
         newUnit.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
-    
     container.appendChild(trackHtml);
   });
 }
 
-
 /***** Dynamic Field Rendering *****/
-
-// In new mode, fields are rendered as static text with delete option.
 function renderDynamicFieldNew(fieldsContainer, fieldData = {}) {
   const fieldHtml = document.createElement('div');
   fieldHtml.className = 'field-entry mb-2 animate__animated animate__fadeIn';
@@ -648,7 +608,6 @@ function renderDynamicFieldNew(fieldsContainer, fieldData = {}) {
     <div class="mt-2 field-input"></div>
   `;
   fieldsContainer.appendChild(fieldHtml);
-  // Autoscroll new field into view:
   fieldHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
   updateDynamicInput(typeText, fieldHtml.querySelector('.field-input'), "", optionsText);
   fieldHtml.querySelector('.delete-field').addEventListener('click', (e) => {
@@ -658,8 +617,6 @@ function renderDynamicFieldNew(fieldsContainer, fieldData = {}) {
   });
 }
 
-
-// In edit mode, dynamic fields are fully editable.
 function renderDynamicField(fieldsContainer, fieldData = null) {
   const fieldHtml = document.createElement('div');
   fieldHtml.className = 'field-entry mb-2 animate__animated animate__fadeIn';
@@ -677,35 +634,27 @@ function renderDynamicField(fieldsContainer, fieldData = null) {
     <button type="button" class="delete-field text-red-500"><i class="fas fa-trash"></i></button>
     <div class="mt-2 field-input"></div>
   `;
-  
   fieldsContainer.appendChild(fieldHtml);
-  // Autoscroll new field into view:
   fieldHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  
-  // Clear default field label on focus:
   const fieldLabelInput = fieldHtml.querySelector('.field-label-input');
   fieldLabelInput.addEventListener('focus', function() {
     if (this.value === 'Field Label' || this.value === 'New Field' || this.value.trim() === '') {
       this.value = '';
     }
   });
-  
   const typeSelect = fieldHtml.querySelector('.field-type');
   const optionsInput = fieldHtml.querySelector('.field-options');
   const fieldInputContainer = fieldHtml.querySelector('.field-input');
   updateDynamicInput(typeSelect.value, fieldInputContainer, fieldData?.value || '', optionsInput.value);
-  
   typeSelect.addEventListener('change', () => {
     optionsInput.classList.toggle('hidden', typeSelect.value !== 'select');
     updateDynamicInput(typeSelect.value, fieldInputContainer, '', optionsInput.value);
   });
-  
   optionsInput.addEventListener('input', () => {
     if (typeSelect.value === 'select') {
       updateDynamicInput('select', fieldInputContainer, '', optionsInput.value);
     }
   });
-  
   fieldHtml.querySelector('.delete-field').addEventListener('click', (e) => {
     e.preventDefault();
     fieldHtml.classList.add('animate__fadeOut');
@@ -713,53 +662,6 @@ function renderDynamicField(fieldsContainer, fieldData = null) {
   });
 }
 
-function renderDynamicUnit(unitsContainer, unitData = null) {
-  const unitHtml = document.createElement('div');
-  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeIn relative';
-  unitHtml.innerHTML = `
-    <div class="relative">
-      <input type="text" placeholder="Unit Label" class="unit-label bg-gray-600 p-2 rounded w-full mb-2" value="">
-      <button type="button" class="delete-unit absolute top-0 right-0 text-red-500"><i class="fas fa-times-circle"></i></button>
-    </div>
-    <div class="fields-container"></div>
-    <button type="button" class="add-field bg-green-500 px-3 py-1 rounded mt-2"><i class="fas fa-plus"></i> Add Field</button>
-  `;
-  
-  // Clear default text on focus:
-  const unitInput = unitHtml.querySelector('.unit-label');
-  unitInput.addEventListener('focus', function() {
-    if (this.value === 'Unit Label' || this.value === 'New Unit' || this.value.trim() === '') {
-      this.value = '';
-    }
-  });
-  
-  // Bind delete event for the unit:
-  unitHtml.querySelector('.delete-unit').addEventListener('click', (e) => {
-    e.preventDefault();
-    unitHtml.classList.add('animate__fadeOut');
-    setTimeout(() => unitHtml.remove(), 300);
-  });
-  
-  // Bind "Add Field" button inside the unit:
-  const fieldsContainer = unitHtml.querySelector('.fields-container');
-  unitHtml.querySelector('.add-field').addEventListener('click', (e) => {
-    e.preventDefault();
-    console.log("Add Field button clicked in unit.");
-    renderDynamicField(fieldsContainer);
-    // Autoscroll the new field into view:
-    const newField = fieldsContainer.lastElementChild;
-    if (newField) {
-      newField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  });
-  
-  // Append the new unit to the provided container and autoscroll it into view:
-  unitsContainer.appendChild(unitHtml);
-  unitHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-
-// Updates the input element rendered below a field based on the selected type and options.
 function updateDynamicInput(type, container, value = '', options = '') {
   container.innerHTML = '';
   let input;
@@ -829,7 +731,6 @@ function getLogEntryFormData() {
   return { date, dailyNotes, tracks };
 }
 
-// Extracts the structure (labels, types, options) from a log entry for comparing with the template.
 function extractStructureFromLog(log) {
   let structure = [];
   log.tracks.forEach(track => {
@@ -850,7 +751,6 @@ function extractStructureFromLog(log) {
   return structure;
 }
 
-// Save new log entry, and update template if structures differ.
 function saveNewLogEntry() {
   const newLog = getLogEntryFormData();
   let templateUpdated = false;
@@ -866,15 +766,12 @@ function saveNewLogEntry() {
   renderLogEntries();
   document.getElementById('logEntryForm').classList.add('hidden');
   showFeedback('Log Entry Saved!');
-  // Autoscroll back to top after saving a new log entry
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (templateUpdated) {
     setTimeout(() => { showFeedback('Template Updated Successfully!', 'info'); }, 1600);
   }
 }
 
-
-// Save edited log entry, with the same template-check.
 function saveEditedLogEntry(originalLog) {
   const updatedLog = getLogEntryFormData();
   let templateUpdated = false;
@@ -885,7 +782,6 @@ function saveEditedLogEntry(originalLog) {
       templateUpdated = true;
     }
   }
-  // Find and update the original log entry in logs array.
   const index = logs.findIndex(log => log.date === originalLog.date && log.dailyNotes === originalLog.dailyNotes);
   if (index !== -1) logs[index] = updatedLog;
   else logs.unshift(updatedLog);
@@ -896,11 +792,9 @@ function saveEditedLogEntry(originalLog) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (templateUpdated) {
     setTimeout(() => { showFeedback('Template Updated Successfully!', 'info'); }, 1600);
-    
   }
 }
 
-/***** Rendering Log Entries *****/
 function renderLogEntries(filteredLogs = logs) {
   const logEntriesDiv = document.getElementById('logEntries');
   logEntriesDiv.innerHTML = '';
@@ -913,7 +807,6 @@ function renderLogEntries(filteredLogs = logs) {
     
     const dateEl = document.createElement('h3');
     dateEl.className = 'text-xl font-semibold text-purple-400';
-    // Add a calendar emoji before the date
     dateEl.innerHTML = `<span title="Date">📅</span> ${log.date}`;
     
     const actionButtons = document.createElement('div');
@@ -937,7 +830,6 @@ function renderLogEntries(filteredLogs = logs) {
     
     const notes = document.createElement('p');
     notes.className = 'text-sm text-gray-300 mb-4';
-    // Add a memo emoji for notes
     notes.innerHTML = `<span class="font-semibold text-gray-400">📝 Notes:</span> ${log.dailyNotes}`;
     
     card.appendChild(header);
@@ -946,46 +838,34 @@ function renderLogEntries(filteredLogs = logs) {
     log.tracks.forEach(track => {
       const trackSection = document.createElement('div');
       trackSection.className = 'mb-5';
-      
       const trackTitle = document.createElement('h4');
       trackTitle.className = 'text-lg font-semibold text-gray-100 mb-2 border-b border-gray-600 pb-1';
-      // Prepend a dumbbell icon (already styled in purple) with an additional emoji (💪) for extra visual punch
       trackTitle.innerHTML = `<i class="fas fa-dumbbell text-purple-400 mr-2"></i><span title="Track">💪 ${track.label}</span>`;
-      
       trackSection.appendChild(trackTitle);
-      
       track.units.forEach(unit => {
         const unitBlock = document.createElement('div');
         unitBlock.className = 'bg-gray-700 p-4 rounded-xl mb-3 space-y-2';
-        
         unit.fields.forEach(field => {
           const fieldRow = document.createElement('div');
           fieldRow.className = 'flex justify-between items-center';
-          
           const label = document.createElement('span');
           label.className = 'text-sm font-medium text-gray-300';
           label.textContent = field.label;
-          
           const value = document.createElement('span');
           value.className = 'text-sm text-gray-100';
-          // Add an appropriate emoji based on field type (example: 📌 for text)
           const emoji = field.type === 'number' ? '🔢' : field.type === 'date' ? '📆' : field.type === 'checkbox' ? '✅' : '📌';
           value.innerHTML = `${emoji} ${field.value}`;
-          
           fieldRow.appendChild(label);
           fieldRow.appendChild(value);
           unitBlock.appendChild(fieldRow);
         });
-        
         trackSection.appendChild(unitBlock);
       });
-      
       card.appendChild(trackSection);
     });
     
     logEntriesDiv.appendChild(card);
     
-    // Bind events for edit and delete:
     editBtn.addEventListener('click', (e) => {
       const logIndex = e.currentTarget.getAttribute('data-log-index');
       editLogEntry(logIndex);
@@ -997,7 +877,6 @@ function renderLogEntries(filteredLogs = logs) {
     });
   });
 }
-
 
 function editLogEntry(logIndex) {
   const log = logs[logIndex];
@@ -1019,9 +898,30 @@ function logMatchesSearch(log, term) {
   return searchText.toLowerCase().includes(term);
 }
 
-/***** Event Listeners & Initialization *****/
+/***** Logo Click to Reset View *****/
+document.getElementById('logo').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('templateBuilder').classList.add('hidden');
+  document.getElementById('logEntryForm').classList.add('hidden');
+  document.getElementById('logoutModal').classList.add('hidden');
+  document.getElementById('feedbackModal').classList.add('hidden');
+  document.getElementById('exportModal')?.classList.add('hidden');
+  document.getElementById('appContainer').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/***** Landing Animation Setup *****/
 document.addEventListener('DOMContentLoaded', () => {
+  // Enhanced landing animation already set in index.html #loadingScreen
+  // After a short delay (simulate fetching logs), hide the loading screen.
+  setTimeout(() => {
+    const loadingScreen = document.getElementById('loadingScreen');
+    loadingScreen.classList.add('animate__fadeOut');
+    setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
+  }, 10500); // increased delay from 1500ms to 2500ms
+  
   checkAuth();
+  
   document.getElementById('closeTutorial').addEventListener('click', () => {
     document.getElementById('tutorial').classList.add('hidden');
     if (template.length === 0) {
@@ -1133,9 +1033,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('tutorial').classList.add('hidden');
     saveCloudData();
     showFeedback('Template Saved Successfully!');
-    // Autoscroll to top of the page after saving template
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  });  
+  });
   document.getElementById('searchBar').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     const filtered = logs.filter(log => logMatchesSearch(log, term));
