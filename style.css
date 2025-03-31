@@ -1,3 +1,8 @@
+/* Global animation smoothing */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Base Styles */
 body {
   font-family: 'Inter', sans-serif;
@@ -140,3 +145,108 @@ button:hover { transform: scale(1.02); }
 #feedbackModal {
   transition: opacity 0.5s ease-in-out;
 }
+/* Header button base */
+.header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  font-family: inherit;
+  gap: 0.5rem;
+}
+
+.header-btn:hover {
+  transform: scale(1.03);
+}
+
+/* Responsive collapse on small screens */
+@media (max-width: 640px) {
+  .header-btn {
+    flex-direction: column;
+    padding: 0.6rem;
+    width: 20%;
+    font-size: 0.8rem;
+  }
+
+  .header-btn .btn-label {
+    display: none;
+  }
+
+  header h1 span {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .logtrack-label {
+    display: none;
+  }
+
+  header h1 {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+.unit-entry,
+.track-entry,
+.log-entry-card,
+#feedbackModal > div,
+#deleteConfirmModal > div,
+#logoutModal > div,
+#exportModal > div {
+  animation: fadeInUpSmooth 0.5s ease both;
+}
+
+@keyframes fadeInUpSmooth {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade out effect for deletions */
+.animate__fadeOut {
+  animation: fadeOutDownSmooth 0.3s ease both !important;
+}
+
+@keyframes fadeOutDownSmooth {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* Bounce-in for feedback icon */
+#feedbackModal i {
+  animation: bounceIn 0.6s ease both;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+button {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+

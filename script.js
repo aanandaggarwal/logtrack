@@ -75,18 +75,6 @@ async function checkAuth() {
     currentUserId = session.user.id;
     document.getElementById('authContainer').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
-
-    const { data, error } = await supabaseClient
-      .from('logtrack')
-      .select('*')
-      .eq('user_id', currentUserId)
-      .maybeSingle();
-
-    if (!data || !data.template || data.template.length === 0) {
-      document.getElementById('tutorial').classList.remove('hidden');
-      document.getElementById('templateBuilder').classList.remove('hidden');
-    }
-
     loadCloudData();
 
     if (wasJustRedirected) {
@@ -98,7 +86,6 @@ async function checkAuth() {
     document.getElementById('appContainer').classList.add('hidden');
   }
 }
-
 
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -120,42 +107,17 @@ document.getElementById('loginButton').addEventListener('click', async () => {
 
 
 document.getElementById('signupButton').addEventListener('click', async () => {
-  const email = document.getElementById('signupEmail').value.trim();
-  const password = document.getElementById('signupPassword').value.trim();
-  const username = document.getElementById('signupUsername').value.trim();
-
-  if (!email || !password || !username) {
-    showFeedback("All fields are required.", 'error');
-    return;
-  }
-
-  const { data, error: signUpError } = await supabaseClient.auth.signUp({
-    email,
-    password
-  });
-
-  if (signUpError) {
-    showFeedback(signUpError.message, 'error');
-    return;
-  }
-
-  const userId = data?.user?.id;
-  if (userId) {
-    const { error: insertError } = await supabaseClient
-      .from('users')
-      .insert([{ id: userId, username }]);
-
-    if (insertError) {
-      showFeedback(insertError.message, 'error');
-      return;
-    }
-
-    showFeedback("Signup successful! Please check your email to confirm.", 'success');
+  const email = document.getElementById('signupEmail').value;
+  const password = document.getElementById('signupPassword').value;
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("A confirmation link has been sent to your email. Please confirm your account and then log in.");
     document.getElementById('signupForm').classList.add('hidden');
     document.getElementById('loginForm').classList.remove('hidden');
   }
 });
-
 
 document.getElementById('showSignup').addEventListener('click', () => {
   document.getElementById('loginForm').classList.add('hidden');
@@ -438,7 +400,7 @@ function renderDynamicUnit(unitsContainer, unitData = null) {
 function renderDynamicField(fieldsContainer, fieldData = null) {
   const fieldHtml = document.createElement('div');
   fieldHtml.className = 'field-entry mb-2 animate__fadeIn';
-  
+
   fieldHtml.innerHTML = `
     <input type="text" placeholder="Field Label" class="field-label-input bg-gray-600 p-2 rounded mr-2" value="${fieldData ? fieldData.label : ''}">
     <select class="field-type bg-gray-600 p-2 rounded mr-2">
@@ -459,79 +421,146 @@ function renderDynamicField(fieldsContainer, fieldData = null) {
   const optionsInput = fieldHtml.querySelector('.field-options');
   const fieldInputContainer = fieldHtml.querySelector('.field-input');
 
+  // Initial input render
+  updateDynamicInput(typeSelect.value, fieldInputContainer, fieldData?.value || '', optionsInput.value);
+
+  // On field type change
   typeSelect.addEventListener('change', () => {
-    optionsInput.classList.toggle('hidden', typeSelect.value !== 'select');
-    updateDynamicInput(typeSelect.value, fieldInputContainer, fieldData?.value);
+    const type = typeSelect.value;
+    optionsInput.classList.toggle('hidden', type !== 'select');
+    updateDynamicInput(type, fieldInputContainer, '', optionsInput.value);
   });
 
-  updateDynamicInput(fieldData?.type || 'text', fieldInputContainer, fieldData?.value);
+  // On options change (if type is select)
+  optionsInput.addEventListener('input', () => {
+    if (typeSelect.value === 'select') {
+      updateDynamicInput('select', fieldInputContainer, '', optionsInput.value);
+    }
+  });
 
   fieldHtml.querySelector('.delete-field').onclick = () => fieldHtml.remove();
 }
 
-function updateDynamicInput(type, container, value = '') {
+function updateDynamicInput(type, container, value = '', options = '') {
   container.innerHTML = '';
   let input;
 
   if (type === 'textarea') {
     input = document.createElement('textarea');
     input.value = value;
+  } else if (type === 'checkbox') {
+    input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = value === true || value === 'true';
+  } else if (type === 'select') {
+    input = document.createElement('select');
+    input.className = 'field-value bg-gray-600 p-2 rounded w-full';
+    input.setAttribute('data-type', 'select');
+
+    const opts = options.split(',').map(opt => opt.trim()).filter(Boolean);
+    opts.forEach(opt => {
+      const optionEl = document.createElement('option');
+      optionEl.value = opt;
+      optionEl.textContent = opt;
+      input.appendChild(optionEl);
+    });
+
+    if (opts.includes(value)) {
+      input.value = value;
+    }
   } else {
     input = document.createElement('input');
-    input.type = type === 'checkbox' ? 'checkbox' : type;
-    if (type === 'checkbox') input.checked = value;
-    else input.value = value;
-  }
-
-  input.className = 'field-value bg-gray-600 p-2 rounded w-full';
-  input.setAttribute('data-type', type);
-  container.appendChild(input);
-}
-
-function updateDynamicInput(type, container) {
-  container.innerHTML = '';
-  const input = document.createElement(type === 'textarea' ? 'textarea' : 'input');
-  input.className = 'field-value bg-gray-600 p-2 rounded w-full';
-  input.setAttribute('data-type', type);
-  if (type !== 'textarea' && type !== 'checkbox') {
     input.type = type;
-  } else if (type === 'checkbox') {
-    input.type = 'checkbox';
+    input.value = value;
   }
+
+  input.classList.add('field-value', 'bg-gray-600', 'p-2', 'rounded', 'w-full');
+  input.setAttribute('data-type', type);
   container.appendChild(input);
 }
 
-
+// Enhanced renderTracks and renderUnit with smooth animations and scroll fix
 function renderTracks(mode = 'new', logData = null) {
   const container = document.getElementById('tracksContainer');
   container.innerHTML = '';
 
   const tracks = mode === 'edit' && logData ? logData.tracks : template;
 
-  tracks.forEach(track => {
-    addDynamicTrack(track, container);
+  tracks.forEach((track, tIdx) => {
+    const trackHtml = document.createElement('div');
+    trackHtml.className = 'track-entry bg-gray-800 p-4 rounded-2xl mb-6 shadow-md transition transform hover:-translate-y-1 hover:shadow-lg animate__animated animate__fadeInUp';
+    trackHtml.innerHTML = `
+      <div class="flex justify-between items-center">
+        <h3 class="font-semibold text-purple-300 text-lg flex items-center gap-2"><i class="fas fa-dumbbell"></i> ${track.label}</h3>
+        <button class="delete-track text-red-500"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="units-container mt-4 space-y-4"></div>
+      <button class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4 transition" title="Add another unit to this track"><i class="fas fa-plus mr-1"></i> Add Unit</button>`;
+
+    trackHtml.querySelector('.delete-track').onclick = () => trackHtml.remove();
+
+    const unitsContainer = trackHtml.querySelector('.units-container');
+    const unitData = mode === 'edit' && logData ? track.units : [{}];
+
+    renderUnit(unitsContainer, track.units[0].fields);
+
+    trackHtml.querySelector('.add-unit').onclick = (e) => {
+      e.preventDefault(); // Prevents scroll jump
+      renderUnit(unitsContainer, track.units[0].fields);
+    };
+
+    container.appendChild(trackHtml);
   });
 }
 
 function renderUnit(container, fieldsTemplate, prefilled = false) {
   const unitHtml = document.createElement('div');
-  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__fadeIn';
+  unitHtml.className = 'unit-entry bg-gray-700 p-4 rounded-xl border-l-4 border-purple-500 relative animate__animated animate__fadeInUp';
+
+  // Delete button
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'absolute top-2 right-2 text-red-400 hover:text-red-500';
+  deleteBtn.innerHTML = '<i class="fas fa-times-circle"></i>';
+  deleteBtn.onclick = () => {
+    unitHtml.classList.add('animate__fadeOut');
+    setTimeout(() => unitHtml.remove(), 300);
+  };
+  unitHtml.appendChild(deleteBtn);
 
   fieldsTemplate.forEach(field => {
-    unitHtml.innerHTML += `
-      <div class="field-entry mb-2">
-        <label class="font-semibold">${field.label}</label>
-        ${field.type === 'textarea' ? 
-          `<textarea data-type="textarea" class="field-value bg-gray-600 p-2 rounded w-full"></textarea>` :
-          field.type === 'checkbox' ?
-          `<input data-type="checkbox" type="checkbox" class="field-value">` :
-          field.type === 'select' ?
-          `<select data-type="select" class="field-value bg-gray-600 p-2 rounded w-full">
-            ${field.options.split(',').map(opt => `<option>${opt.trim()}</option>`).join('')}
-          </select>` :
-          `<input data-type="${field.type}" type="${field.type}" class="field-value bg-gray-600 p-2 rounded w-full">`
-        }
-      </div>`;
+    const fieldEntry = document.createElement('div');
+    fieldEntry.className = 'field-entry mb-2 animate__animated animate__fadeInUp';
+
+    const label = document.createElement('label');
+    label.className = 'font-semibold text-gray-300';
+    label.textContent = field.label;
+
+    let inputElement;
+    if (field.type === 'textarea') {
+      inputElement = document.createElement('textarea');
+    } else if (field.type === 'checkbox') {
+      inputElement = document.createElement('input');
+      inputElement.type = 'checkbox';
+    } else if (field.type === 'select') {
+      inputElement = document.createElement('select');
+      const options = (field.options || '').split(',').map(opt => opt.trim()).filter(Boolean);
+      options.forEach(opt => {
+        const optEl = document.createElement('option');
+        optEl.value = opt;
+        optEl.textContent = opt;
+        inputElement.appendChild(optEl);
+      });
+    } else {
+      inputElement = document.createElement('input');
+      inputElement.type = field.type;
+    }
+
+    inputElement.className = 'field-value bg-gray-600 p-2 rounded w-full transition duration-200';
+    inputElement.setAttribute('data-type', field.type);
+
+    fieldEntry.appendChild(label);
+    fieldEntry.appendChild(inputElement);
+    unitHtml.appendChild(fieldEntry);
   });
 
   container.appendChild(unitHtml);
@@ -566,7 +595,9 @@ function getLogEntryFormData() {
           label: fieldLabel,
           type: fieldType,
           value: value,
-          options: ""
+          options: fieldType === 'select'
+            ? fieldEntry.querySelector('.field-options')?.value || ''
+            : ''
         });
       });
       trackData.units.push(unitData);
@@ -587,7 +618,7 @@ function extractStructureFromLog(log) {
         newUnit.fields.push({
           label: field.label,
           type: field.type,
-          options: field.options || ""
+          options: field.options || ""  // ✅ include options!
         });
       });
       newTrack.units.push(newUnit);
@@ -597,62 +628,108 @@ function extractStructureFromLog(log) {
   return structure;
 }
 
+
 /***** Rendering Log Entries *****/
 function renderLogEntries(filteredLogs = logs) {
   const logEntriesDiv = document.getElementById('logEntries');
   logEntriesDiv.innerHTML = '';
+
   filteredLogs.forEach((log, index) => {
-    let cardHtml = `<div class="log-entry-card bg-gray-800 border border-gray-700 rounded p-4 mb-4 animate__animated animate__fadeIn">
-          <div class="flex justify-between items-center mb-2">
-            <h3 class="text-lg font-bold text-purple-400">${log.date}</h3>
-            <div class="flex space-x-2">
-              <button class="edit-log-button text-blue-400 hover:text-blue-500" data-log-index="${index}"><i class="fas fa-edit"></i></button>
-              <button class="delete-log-button text-red-500 hover:text-red-600" data-log-index="${index}"><i class="fas fa-trash"></i></button>
-            </div>
-          </div>
-          <p class="mb-4 text-sm text-gray-300"><strong>Notes:</strong> ${log.dailyNotes}</p>`;
+    const card = document.createElement('div');
+    card.className = 'log-entry-card bg-gray-800 border border-gray-700 rounded-2xl p-6 mb-6 shadow-md transition transform hover:-translate-y-1 hover:shadow-lg animate__animated animate__fadeIn';
+
+    const header = document.createElement('div');
+    header.className = 'flex justify-between items-start mb-4';
+
+    const date = document.createElement('h3');
+    date.className = 'text-xl font-semibold text-purple-400';
+    date.textContent = log.date;
+
+    const actionButtons = document.createElement('div');
+    actionButtons.className = 'flex space-x-3';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'text-blue-400 hover:text-blue-500';
+    editBtn.innerHTML = '<i class="fas fa-edit text-lg"></i>';
+    editBtn.setAttribute('data-log-index', index);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'text-red-500 hover:text-red-600';
+    deleteBtn.innerHTML = '<i class="fas fa-trash text-lg"></i>';
+    deleteBtn.setAttribute('data-log-index', index);
+
+    actionButtons.appendChild(editBtn);
+    actionButtons.appendChild(deleteBtn);
+    header.appendChild(date);
+    header.appendChild(actionButtons);
+
+    const notes = document.createElement('p');
+    notes.className = 'text-sm text-gray-300 mb-4';
+    notes.innerHTML = `<span class="font-semibold text-gray-400">Notes:</span> ${log.dailyNotes}`;
+
+    card.appendChild(header);
+    card.appendChild(notes);
+
     log.tracks.forEach(track => {
-      cardHtml += `<div class="mb-4">
-            <h4 class="font-bold border-b pb-1 mb-2">${track.label}</h4>
-            <table class="w-full text-sm">
-              <thead>
-                <tr>
-                  <th class="py-1 text-left">#</th>
-                  <th class="py-1 text-left">Details</th>
-                </tr>
-              </thead>
-              <tbody>`;
-      track.units.forEach((unit, idx) => {
-        let detailsHTML = "";
+      const trackSection = document.createElement('div');
+      trackSection.className = 'mb-5';
+
+      const trackTitle = document.createElement('h4');
+      trackTitle.className = 'text-lg font-semibold text-gray-100 mb-2 border-b border-gray-600 pb-1';
+      trackTitle.textContent = track.label;
+      trackSection.appendChild(trackTitle);
+
+      track.units.forEach((unit, unitIdx) => {
+        const unitBlock = document.createElement('div');
+        unitBlock.className = 'bg-gray-700 p-4 rounded-xl mb-3 space-y-2';
+
         unit.fields.forEach(field => {
-          detailsHTML += `<div><span class="font-semibold">${field.label}:</span> ${field.value}</div>`;
+          const fieldRow = document.createElement('div');
+          fieldRow.className = 'flex justify-between items-center';
+
+          const label = document.createElement('span');
+          label.className = 'text-sm font-medium text-gray-300';
+          label.textContent = field.label;
+
+          const value = document.createElement('span');
+          value.className = 'text-sm text-gray-100';
+          value.textContent = field.value;
+
+          fieldRow.appendChild(label);
+          fieldRow.appendChild(value);
+          unitBlock.appendChild(fieldRow);
         });
-        cardHtml += `<tr>
-                  <td class="py-1">${idx + 1}</td>
-                  <td class="py-1">${detailsHTML}</td>
-                </tr>`;
+
+        trackSection.appendChild(unitBlock);
       });
-      cardHtml += `</tbody>
-            </table>
-          </div>`;
+
+      card.appendChild(trackSection);
     });
-    cardHtml += `</div>`;
-    logEntriesDiv.insertAdjacentHTML('beforeend', cardHtml);
+
+    logEntriesDiv.appendChild(card);
   });
-  document.querySelectorAll('.edit-log-button').forEach(btn => {
+
+  // Bind edit and delete
+  document.querySelectorAll('.edit-log-button, .delete-log-button').forEach(btn => {
+    btn.onclick = null;
+  });
+
+  document.querySelectorAll('.edit-log-button, .text-blue-400').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const logIndex = e.currentTarget.getAttribute('data-log-index');
       editLogEntry(logIndex);
     });
   });
-  document.querySelectorAll('.delete-log-button').forEach(btn => {
-    btn.onclick = (e) => {
+
+  document.querySelectorAll('.delete-log-button, .text-red-500').forEach(btn => {
+    btn.addEventListener('click', (e) => {
       e.preventDefault();
       const logIndex = e.currentTarget.getAttribute('data-log-index');
       confirmLogDeletion(logIndex);
-    };
+    });
   });
 }
+
 
 function editLogEntry(logIndex) {
   const log = logs[logIndex];
