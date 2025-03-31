@@ -17,7 +17,13 @@
     <!-- SortableJS for drag-and-drop -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
   </head>
-  <body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+  <body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col relative">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
+      <div class="animate__animated animate__fadeIn">
+        <i class="fas fa-spinner fa-spin text-6xl text-purple-400"></i>
+      </div>
+    </div>
     <!-- Authentication Container -->
     <div id="authContainer" class="flex flex-col items-center justify-center flex-grow font-mono animate__animated animate__fadeIn">
       <!-- Landing Logo -->
@@ -101,7 +107,7 @@
         </div>
         <!-- New / Edit Log Entry Form -->
         <div id="logEntryForm" class="hidden bg-gray-800 rounded p-6 mb-6 animate__animated animate__fadeIn font-mono">
-          <!-- Dynamically generated -->
+          <!-- Dynamically generated log entry form -->
         </div>
         <!-- Log Entries Display -->
         <div id="logEntries" class="space-y-4 font-mono"></div>

@@ -83,3 +83,8 @@ button:hover { transform: scale(1.02); }
   header, main { padding: 1rem; }
   .log-entry-card { padding: 1rem; }
 }
+
+/* Loading Screen */
+#loadingScreen {
+  transition: opacity 0.5s ease;
+}

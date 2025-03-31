@@ -226,122 +226,144 @@ function renderLogEntryForm(mode = 'new', logData = null) {
         <label for="daily-notes" class="block text-sm font-semibold mb-2 text-gray-300 font-mono">Daily Notes</label>
         <textarea id="daily-notes" name="daily-notes" class="bg-gray-700 text-white p-3 rounded w-full font-mono"></textarea>
       </div>`;
-  template.forEach((track, tIndex) => {
-    html += `<div class="track-entry border border-gray-700 rounded p-4 mb-4" data-track-index="${tIndex}">
-      <h3 class="text-lg font-bold">${track.label}</h3>
-      <div class="units-container" data-track-index="${tIndex}">`;
-    let unitsArray = [];
-    if (mode === 'edit' && logData && logData.tracks) {
-      const tmplTrack = logData.tracks.find(t => t.templateTrackIndex === tIndex);
-      if (tmplTrack) {
-        unitsArray = tmplTrack.units;
-      }
-    }
-    if (unitsArray.length === 0 && track.units && track.units.length > 0) {
+  // Build tracks from saved log data or from the template
+  let tracksToRender = [];
+  if (mode === 'edit' && logData && logData.tracks) {
+    tracksToRender = logData.tracks;
+  } else {
+    tracksToRender = template.length ? template.map(track => {
+      // Mark tracks coming from the template as prefilled so they are read-only in daily log
       let defaultUnit = {
-        fields: track.units[0].fields.map(field => ({
+        fields: track.units && track.units.length > 0 ? track.units[0].fields.map(field => ({
           label: field.label,
           type: field.type,
           options: field.options || "",
           value: ""
-        }))
+        })) : []
       };
-      unitsArray.push(defaultUnit);
-    }
-    unitsArray.forEach((unit, uIndex) => {
+      return { label: track.label, units: [defaultUnit], prefilled: true };
+    }) : [];
+  }
+  tracksToRender.forEach((track, tIndex) => {
+    html += `
+      <div class="track-entry border border-gray-700 rounded p-4 mb-4 animate__animated animate__fadeIn" data-track-index="${tIndex}">
+        <div class="flex items-center justify-between mb-2">
+          <input type="text" class="track-label bg-gray-700 text-white p-3 rounded font-mono text-lg flex-grow" value="${track.label}" placeholder="Track Name" ${track.prefilled ? 'readonly' : ''} />
+          ${ track.prefilled ? `<button type="button" class="delete-track-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>` : '' }
+        </div>
+        <div class="units-container" data-track-index="${tIndex}">`;
+    track.units.forEach((unit, uIndex) => {
       html += `<div class="unit-entry mb-2" data-unit-index="${uIndex}">`;
       unit.fields.forEach((field, fIndex) => {
-        html += `<div class="field-entry mb-2">
-          <label class="block text-sm text-gray-400">${field.label}</label>`;
+        html += `<div class="field-entry mb-2 animate__animated animate__fadeIn flex flex-col" data-field-index="${fIndex}">
+          <div class="flex items-center justify-between">
+            <input type="text" class="field-label-input bg-gray-600 text-white p-2 rounded flex-grow font-mono" value="${field.label}" placeholder="Field Name" ${track.prefilled ? 'readonly' : ''} />
+            <button type="button" class="delete-field-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
+          </div>`;
         if (field.type === 'textarea') {
-          html += `<textarea class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono" data-type="${field.type}" placeholder="${field.label}">${field.value || ""}</textarea>`;
+          html += `<textarea class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="${field.type}" placeholder="${field.label}">${field.value || ""}</textarea>`;
         } else if (field.type === 'checkbox') {
-          html += `<input type="checkbox" class="field-value" data-type="${field.type}" ${field.value ? 'checked' : ''} />`;
+          html += `<input type="checkbox" class="field-value mt-2" data-type="${field.type}" ${field.value ? 'checked' : ''} />`;
         } else if (field.type === 'select') {
           let options = field.options ? field.options.split(',').map(opt => opt.trim()) : [];
-          html += `<select class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono" data-type="${field.type}">`;
+          html += `<select class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="${field.type}">`;
           options.forEach(opt => {
             html += `<option value="${opt}" ${field.value === opt ? 'selected' : ''}>${opt}</option>`;
           });
           html += `</select>`;
         } else {
-          html += `<input type="${field.type}" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono" data-type="${field.type}" value="${field.value || ""}" placeholder="${field.label}" />`;
+          html += `<input type="${field.type}" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="${field.type}" value="${field.value || ""}" placeholder="${field.label}" />`;
         }
         html += `</div>`;
       });
-      if (unitsArray.length > 1) {
-        html += `<button type="button" class="delete-unit-entry text-red-500 hover:text-red-600"><i class="fas fa-trash"></i></button>`;
-      }
+      html += `<button type="button" class="add-field-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
+                 <i class="fas fa-plus mr-1"></i> Add Field
+               </button>`;
       html += `</div>`;
     });
     html += `</div>
-      <button type="button" class="add-unit-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2" data-track-index="${tIndex}">
-        <i class="fas fa-plus mr-1"></i> Add Unit
-      </button>
-    </div>`;
+             <button type="button" class="add-unit-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
+               <i class="fas fa-plus mr-1"></i> Add Unit
+             </button>
+           </div>`;
   });
+  html += `<button type="button" id="addTrackEntry" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono flex items-center">
+             <i class="fas fa-plus mr-1"></i> Add Track
+           </button>`;
   html += `<button id="saveEntry" type="button" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold font-mono">
              ${mode==='new'?'Save Log Entry':'Save Changes'}
            </button>
-    </form>`;
+           </form>`;
   formContainer.innerHTML = html;
   formContainer.classList.remove('hidden');
   document.getElementById('date').value = mode === 'edit' && logData ? logData.date : new Date().toISOString().split('T')[0];
   document.getElementById('daily-notes').value = mode === 'edit' && logData ? logData.dailyNotes : "";
-  document.querySelectorAll('.add-unit-entry').forEach(button => {
-    button.addEventListener('click', (e) => {
-      const trackIndex = e.currentTarget.getAttribute('data-track-index');
-      const unitsContainer = document.querySelector(`.units-container[data-track-index="${trackIndex}"]`);
-      const trackTemplate = template[trackIndex];
-      if (trackTemplate.units && trackTemplate.units.length > 0) {
-        let newUnit = {
-          fields: trackTemplate.units[0].fields.map(field => ({
-            label: field.label,
-            type: field.type,
-            options: field.options || "",
-            value: ""
-          }))
-        };
-        let unitIndex = unitsContainer.querySelectorAll('.unit-entry').length;
-        let unitHtml = `<div class="unit-entry mb-2" data-unit-index="${unitIndex}">`;
-        newUnit.fields.forEach((field) => {
-          unitHtml += `<div class="field-entry mb-2">
-            <label class="block text-sm text-gray-400">${field.label}</label>`;
-          if (field.type === 'textarea') {
-            unitHtml += `<textarea class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono" data-type="${field.type}" placeholder="${field.label}"></textarea>`;
-          } else if (field.type === 'checkbox') {
-            unitHtml += `<input type="checkbox" class="field-value" data-type="${field.type}" />`;
-          } else if (field.type === 'select') {
-            let options = field.options ? field.options.split(',').map(opt => opt.trim()) : [];
-            unitHtml += `<select class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono" data-type="${field.type}">`;
-            options.forEach(opt => {
-              unitHtml += `<option value="${opt}">${opt}</option>`;
-            });
-            unitHtml += `</select>`;
-          } else {
-            unitHtml += `<input type="${field.type}" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono" data-type="${field.type}" placeholder="${field.label}" />`;
-          }
-          unitHtml += `</div>`;
-        });
-        unitHtml += `<button type="button" class="delete-unit-entry text-red-500 hover:text-red-600"><i class="fas fa-trash"></i></button>`;
-        unitHtml += `</div>`;
-        unitsContainer.insertAdjacentHTML('beforeend', unitHtml);
-        attachDeleteUnitEvents(unitsContainer);
-      }
-    });
+  const entryForm = document.getElementById('entryForm');
+  entryForm.addEventListener('click', function(e) {
+    if(e.target.closest('.delete-track-entry')) {
+      e.target.closest('.track-entry').remove();
+    }
+    if(e.target.closest('.delete-field-entry')) {
+      e.target.closest('.field-entry').remove();
+    }
+    if(e.target.closest('.add-unit-entry')) {
+      const trackEntry = e.target.closest('.track-entry');
+      const unitsContainer = trackEntry.querySelector('.units-container');
+      const unitIndex = unitsContainer.querySelectorAll('.unit-entry').length;
+      let unitHtml = `<div class="unit-entry mb-2" data-unit-index="${unitIndex}">
+                        <div class="field-entry mb-2 flex flex-col animate__animated animate__fadeIn" data-field-index="0">
+                          <div class="flex items-center justify-between">
+                            <input type="text" class="field-label-input bg-gray-600 text-white p-2 rounded flex-grow font-mono" value="New Field" placeholder="Field Name" />
+                            <button type="button" class="delete-field-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
+                          </div>
+                          <input type="text" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="text" placeholder="Field Value" />
+                        </div>
+                        <button type="button" class="add-field-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
+                          <i class="fas fa-plus mr-1"></i> Add Field
+                        </button>
+                      </div>`;
+      unitsContainer.insertAdjacentHTML('beforeend', unitHtml);
+    }
+    if(e.target.closest('.add-field-entry')) {
+      const unitEntry = e.target.closest('.unit-entry');
+      const fieldIndex = unitEntry.querySelectorAll('.field-entry').length;
+      let fieldHtml = `<div class="field-entry mb-2 animate__animated animate__fadeIn flex flex-col" data-field-index="${fieldIndex}">
+                         <div class="flex items-center justify-between">
+                           <input type="text" class="field-label-input bg-gray-600 text-white p-2 rounded flex-grow font-mono" value="New Field" placeholder="Field Name" />
+                           <button type="button" class="delete-field-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
+                         </div>
+                         <input type="text" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="text" placeholder="Field Value" />
+                       </div>`;
+      unitEntry.insertAdjacentHTML('beforeend', fieldHtml);
+    }
   });
-  document.querySelectorAll('.delete-unit-entry').forEach(button => {
-    button.addEventListener('click', (e) => {
-      e.currentTarget.parentElement.remove();
-    });
-  });
-}
-
-function attachDeleteUnitEvents(unitsContainer) {
-  unitsContainer.querySelectorAll('.delete-unit-entry').forEach(button => {
-    button.addEventListener('click', (e) => {
-      e.currentTarget.parentElement.remove();
-    });
+  document.getElementById('addTrackEntry').addEventListener('click', () => {
+    const form = document.getElementById('entryForm');
+    const newTrackIndex = form.querySelectorAll('.track-entry').length;
+    // Newly added track in a daily log is editable so do not mark as prefilled
+    let newTrackHtml = `<div class="track-entry border border-gray-700 rounded p-4 mb-4 animate__animated animate__fadeIn" data-track-index="${newTrackIndex}">
+                          <div class="flex items-center justify-between mb-2">
+                            <input type="text" class="track-label bg-gray-700 text-white p-3 rounded font-mono text-lg flex-grow" value="New Track" placeholder="Track Name" />
+                          </div>
+                          <div class="units-container" data-track-index="${newTrackIndex}">
+                            <div class="unit-entry" data-unit-index="0">
+                              <div class="field-entry mb-2 flex flex-col animate__animated animate__fadeIn" data-field-index="0">
+                                <div class="flex items-center justify-between">
+                                  <input type="text" class="field-label-input bg-gray-600 text-white p-2 rounded flex-grow font-mono" value="New Field" placeholder="Field Name" />
+                                  <button type="button" class="delete-field-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
+                                </div>
+                                <input type="text" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="text" placeholder="Field Value" />
+                              </div>
+                              <button type="button" class="add-field-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
+                                <i class="fas fa-plus mr-1"></i> Add Field
+                              </button>
+                            </div>
+                            <button type="button" class="add-unit-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
+                              <i class="fas fa-plus mr-1"></i> Add Unit
+                            </button>
+                          </div>
+                        </div>`;
+    form.insertAdjacentHTML('beforeend', newTrackHtml);
   });
 }
 
@@ -352,15 +374,16 @@ function getLogEntryFormData() {
   let tracks = [];
   const trackEntries = document.querySelectorAll('.track-entry');
   trackEntries.forEach(trackEntry => {
-    const trackIndex = trackEntry.getAttribute('data-track-index');
-    const trackLabel = template[trackIndex].label;
-    let trackData = { templateTrackIndex: parseInt(trackIndex), label: trackLabel, units: [] };
+    const trackLabelInput = trackEntry.querySelector('.track-label');
+    const trackLabel = trackLabelInput ? trackLabelInput.value : "Unnamed Track";
+    let trackData = { label: trackLabel, units: [] };
     const unitEntries = trackEntry.querySelectorAll('.unit-entry');
     unitEntries.forEach(unitEntry => {
       let unitData = { fields: [] };
       const fieldEntries = unitEntry.querySelectorAll('.field-entry');
       fieldEntries.forEach(fieldEntry => {
-        const fieldLabel = fieldEntry.querySelector('label').textContent.trim();
+        const fieldLabelInput = fieldEntry.querySelector('.field-label-input');
+        const fieldLabel = fieldLabelInput ? fieldLabelInput.value : "Unnamed Field";
         const inputEl = fieldEntry.querySelector('.field-value');
         let value;
         if (inputEl.getAttribute('data-type') === 'checkbox') {
@@ -371,7 +394,8 @@ function getLogEntryFormData() {
         unitData.fields.push({
           label: fieldLabel,
           type: inputEl.getAttribute('data-type'),
-          value: value
+          value: value,
+          options: ""
         });
       });
       trackData.units.push(unitData);
@@ -385,21 +409,19 @@ function getLogEntryFormData() {
 function extractStructureFromLog(log) {
   let structure = [];
   log.tracks.forEach(track => {
-    if (!track.isCustom) {
-      let newTrack = { label: track.label, units: [] };
-      track.units.forEach(unit => {
-        let newUnit = { label: "", fields: [] };
-        unit.fields.forEach(field => {
-          newUnit.fields.push({
-            label: field.label,
-            type: field.type,
-            options: field.options || ""
-          });
+    let newTrack = { label: track.label, units: [] };
+    track.units.forEach(unit => {
+      let newUnit = { label: "", fields: [] };
+      unit.fields.forEach(field => {
+        newUnit.fields.push({
+          label: field.label,
+          type: field.type,
+          options: field.options || ""
         });
-        newTrack.units.push(newUnit);
       });
-      structure.push(newTrack);
-    }
+      newTrack.units.push(newUnit);
+    });
+    structure.push(newTrack);
   });
   return structure;
 }
@@ -467,11 +489,12 @@ function editLogEntry(logIndex) {
   renderLogEntryForm('edit', log);
   document.getElementById('saveEntry').addEventListener('click', () => {
     const updatedLog = getLogEntryFormData();
-    if (confirmTemplateUpdate(updatedLog)) {
-      const newStructure = extractStructureFromLog(updatedLog);
-      template = newStructure;
-      renderTemplateTracks();
-      saveCloudData();
+    if (JSON.stringify(extractStructureFromLog(updatedLog)) !== JSON.stringify(template)) {
+      if (confirm("Your daily log structure differs from the current template. Update template with the new structure?")) {
+        template = extractStructureFromLog(updatedLog);
+        renderTemplateTracks();
+        saveCloudData();
+      }
     }
     logs[logIndex] = updatedLog;
     saveCloudData();
@@ -482,24 +505,17 @@ function editLogEntry(logIndex) {
 
 function saveNewLogEntry() {
   const newLog = getLogEntryFormData();
-  if (confirmTemplateUpdate(newLog)) {
-    const newStructure = extractStructureFromLog(newLog);
-    template = newStructure;
-    renderTemplateTracks();
-    saveCloudData();
+  if (JSON.stringify(extractStructureFromLog(newLog)) !== JSON.stringify(template)) {
+    if (confirm("Your daily log structure differs from the current template. Update template with the new structure?")) {
+      template = extractStructureFromLog(newLog);
+      renderTemplateTracks();
+      saveCloudData();
+    }
   }
   logs.unshift(newLog);
   saveCloudData();
   renderLogEntries();
   document.getElementById('logEntryForm').classList.add('hidden');
-}
-
-function confirmTemplateUpdate(log) {
-  const newStructure = extractStructureFromLog(log);
-  if (JSON.stringify(newStructure) !== JSON.stringify(template)) {
-    return confirm("The structure of this log entry differs from your current template. Would you like to update your template with these changes?");
-  }
-  return true;
 }
 
 /***** Enhanced Search Functionality *****/
@@ -643,4 +659,8 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   });
   loadCloudData();
+  // Hide loading screen after content loads
+  const loadingScreen = document.getElementById('loadingScreen');
+  loadingScreen.classList.add('animate__fadeOut');
+  setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
 });
