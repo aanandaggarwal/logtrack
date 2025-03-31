@@ -7,8 +7,10 @@ html {
 body {
   font-family: 'Inter', sans-serif;
   user-select: none;
-  background-color: #1c1c1c;
+  background: linear-gradient(135deg, #1c1c1c 0%, #121212 100%);
   color: #ffffff;
+  margin: 0;
+  padding: 0;
 }
 
 /* Backgrounds & Borders */
@@ -17,7 +19,7 @@ body {
 .border-gray-800 { border-color: #000000; }
 .bg-gray-800 { background-color: #2e2e2e; }
 
-/* Accent Colors */
+/* Accent Colors & Brand Hues */
 .bg-purple-600 { background-color: #8b5cf6; }
 .hover\:bg-purple-700:hover { background-color: #7c3aed; }
 .text-purple-400 { color: #8b5cf6; }
@@ -33,12 +35,15 @@ textarea,
 select {
   font-family: monospace;
   user-select: text !important;
+  background-color: #333;
+  border: 1px solid #444;
+  color: #fff;
 }
 
 /* Custom Drag Handle */
 .handle-track i { cursor: grab; }
 
-/* Animation */
+/* Animations */
 .fade-in { animation: fadeIn 0.5s ease-in-out; }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -46,10 +51,13 @@ select {
 }
 
 /* Buttons */
-button { transition: background-color 0.2s ease, transform 0.2s ease; }
+button { 
+  transition: background-color 0.2s ease, transform 0.2s ease; 
+  border: none;
+}
 button:hover { transform: scale(1.02); }
 
-/* Boxed forms and cards with rounded corners */
+/* Card and Form Containers */
 .track-container,
 .unit-container,
 .field-container,
@@ -63,14 +71,16 @@ button:hover { transform: scale(1.02); }
   background: #2e2e2e;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   border: 1px solid #444;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .log-entry-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
 }
+
+/* Table Styles inside Cards */
 .log-entry-card table {
   width: 100%;
   border-collapse: collapse;
@@ -89,63 +99,12 @@ button:hover { transform: scale(1.02); }
   .log-entry-card { padding: 1rem; }
 }
 
-/* Loading Screen */
-#loadingScreen {
+/* Loading & Modal Transitions */
+#loadingScreen, #logoutModal, #feedbackModal {
   transition: opacity 0.5s ease;
 }
 
-/* Logout Modal */
-#logoutModal {
-  transition: opacity 0.5s ease-in-out;
-}
-
-/* Mobile-optimized forms and buttons */
-@media (max-width: 768px) {
-  #authForms, #templateBuilder, #logEntryForm, .log-entry-card {
-    padding: 1rem;
-    margin: 0.5rem;
-  }
-
-  button, input, textarea, select {
-    padding: 0.75rem;
-  }
-
-  header {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  header button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .log-entry-card {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-}
-
-/* Enhanced Animations */
-.animate__animated {
-  animation-duration: 0.6s;
-}
-
-/* Pulsating Icon (for loading elements) */
-.fa-spin {
-  animation: spin 2s infinite linear;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Optional custom feedback modal styles */
-#feedbackModal {
-  transition: opacity 0.5s ease-in-out;
-}
-/* Header button base */
+/* Header Button */
 .header-btn {
   display: flex;
   align-items: center;
@@ -155,153 +114,44 @@ button:hover { transform: scale(1.02); }
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   transition: background-color 0.2s ease, transform 0.2s ease;
-  font-family: inherit;
   gap: 0.5rem;
 }
+.header-btn:hover { transform: scale(1.03); }
 
-.header-btn:hover {
-  transform: scale(1.03);
-}
+/* Enhanced Animations */
+.animate__animated { animation-duration: 0.6s; }
 
-/* Responsive collapse on small screens */
-@media (max-width: 640px) {
-  .header-btn {
-    flex-direction: column;
-    padding: 0.6rem;
-    width: 20%;
-    font-size: 0.8rem;
-  }
+/* Pulsating Icon */
+.fa-spin { animation: spin 2s infinite linear; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-  .header-btn .btn-label {
-    display: none;
-  }
-
-  header h1 span {
-    display: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .logtrack-label {
-    display: none;
-  }
-
-  header h1 {
-    justify-content: center;
-    width: 100%;
-  }
-}
-
-.unit-entry,
-.track-entry,
-.log-entry-card,
-#feedbackModal > div,
-#deleteConfirmModal > div,
-#logoutModal > div,
-#exportModal > div {
-  animation: fadeInUpSmooth 0.5s ease both;
-}
-
-@keyframes fadeInUpSmooth {
-  0% { opacity: 0; transform: translateY(12px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-/* Fade out effect for deletions */
+/* Fade Out Animation */
 .animate__fadeOut {
   animation: fadeOutDownSmooth 0.3s ease both !important;
 }
-
 @keyframes fadeOutDownSmooth {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(20px); }
 }
 
-/* Bounce-in for feedback icon */
-#feedbackModal i {
-  animation: bounceIn 0.6s ease both;
-}
-
+/* Bounce Animation for Feedback Icon */
+#feedbackModal i { animation: bounceIn 0.6s ease both; }
 @keyframes bounceIn {
-  0% {
-    transform: scale(0.7);
-    opacity: 0;
-  }
-  60% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
 }
 
-button {
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-button:active {
-  transform: scale(0.97);
-}
-
-/* NEW: Mobile Responsiveness for Template Builder */
+/* Mobile Responsiveness for Template Builder */
 @media (max-width: 768px) {
-  /* Template Builder Container Adjustments */
-  #templateBuilder {
-    padding: 1rem;
-  }
-  
-  /* Template Track Container Adjustments */
-  #templateBuilder .track-container {
-    margin: 0.5rem 0;
-    padding: 1rem;
-    /* Allow icons to overflow if needed (see separate overflow rules) */
-    overflow: visible;
-  }
-  
-  /* Stack header elements vertically with proper spacing */
-  #templateBuilder .track-container .handle-track {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-  #templateBuilder .track-container .handle-track input {
-    margin-bottom: 0.5rem;
-  }
-  
-  /* Adjust units container to add more breathing room */
-  #templateBuilder .track-container .units-container {
-    margin-top: 1rem;
-  }
-  
-  /* Unit Container Adjustments */
-  #templateBuilder .track-container .units-container .unit-container {
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border-width: 1px;
-  }
-  /* Ensure inner flex elements stack vertically */
-  #templateBuilder .track-container .units-container .unit-container > div.flex {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-  #templateBuilder .track-container .units-container .unit-container input {
-    margin-bottom: 0.5rem;
-  }
-  #templateBuilder .track-container .units-container .unit-container button {
-    align-self: flex-end;
-  }
-  
-  /* Button adjustments for better tapping */
-  #templateBuilder button {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
+  #templateBuilder { padding: 1rem; }
+  #templateBuilder .track-container { margin: 0.5rem 0; padding: 1rem; overflow: visible; }
+  #templateBuilder .track-container .handle-track { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  #templateBuilder .track-container .handle-track input { margin-bottom: 0.5rem; }
+  #templateBuilder .track-container .units-container { margin-top: 1rem; }
+  #templateBuilder .track-container .units-container .unit-container { padding: 0.75rem; margin-bottom: 1rem; border-width: 1px; }
+  #templateBuilder .track-container .units-container .unit-container > div.flex { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  #templateBuilder .track-container .units-container .unit-container input { margin-bottom: 0.5rem; }
+  #templateBuilder .track-container .units-container .unit-container button { align-self: flex-end; }
+  #templateBuilder button { padding: 0.75rem; font-size: 0.9rem; }
 }
