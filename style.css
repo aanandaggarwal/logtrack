@@ -88,3 +88,50 @@ button:hover { transform: scale(1.02); }
 #loadingScreen {
   transition: opacity 0.5s ease;
 }
+
+/* Logout Modal */
+#logoutModal {
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* Mobile-optimized forms and buttons */
+@media (max-width: 768px) {
+  #authForms, #templateBuilder, #logEntryForm, .log-entry-card {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+
+  button, input, textarea, select {
+    padding: 0.75rem;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  header button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .log-entry-card {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* Enhanced Animations */
+.animate__animated {
+  animation-duration: 0.6s;
+}
+
+/* Pulsating Icon (for loading elements) */
+.fa-spin {
+  animation: spin 2s infinite linear;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

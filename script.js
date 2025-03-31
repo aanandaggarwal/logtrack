@@ -59,7 +59,11 @@ document.getElementById('showLogin').addEventListener('click', () => {
 });
 
 document.getElementById('logoutButton').addEventListener('click', async () => {
+  const logoutModal = document.getElementById('logoutModal');
+  logoutModal.classList.remove('hidden');
+  await new Promise(resolve => setTimeout(resolve, 800)); // Simulate delay for UI effect
   await supabaseClient.auth.signOut();
+  logoutModal.classList.add('hidden');
   checkAuth();
 });
 
