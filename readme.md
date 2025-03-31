@@ -6,7 +6,7 @@ LogTrack is a personal web application I built to help me stay organized and tra
 
 ## Live Demo
 
-🔗 [Visit LogTrack](https://aanand-aggarwal.github.io/logtrack/) (Deployed via GitHub Pages)
+🔗 [Visit LogTrack](https://aanandaggarwal.github.io/logtrack/) (Deployed via GitHub Pages)
 
 ## Tech Stack
 
