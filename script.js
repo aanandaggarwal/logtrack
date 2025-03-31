@@ -79,6 +79,10 @@ document.getElementById('forgotPasswordLink')?.addEventListener('click', async (
 
 /***** Load & Save Cloud Data *****/
 async function loadCloudData() {
+  if (!currentUserId) {
+    console.log("No current user found, skipping cloud data load.");
+    return;
+  }
   const { data, error } = await supabaseClient
     .from('logtrack')
     .select('*')
