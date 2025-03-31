@@ -9,19 +9,97 @@ let logs = []; // Array of log entry objects
 let cloudDocId = null; // Single row ID in Supabase
 let currentUserId = null;
 
+function showFeedback(message, type = 'success', duration = 1500) {
+  const feedbackModal = document.getElementById('feedbackModal');
+  const feedbackMessage = document.getElementById('feedbackMessage');
+  const feedbackIcon = document.getElementById('feedbackIcon');
+
+  feedbackMessage.textContent = message;
+
+  // Customize based on feedback type
+  if (type === 'success') {
+    feedbackIcon.className = 'fas fa-check-circle text-5xl text-green-400 mb-4';
+  } else if (type === 'error') {
+    feedbackIcon.className = 'fas fa-exclamation-triangle text-5xl text-red-400 mb-4';
+  } else if (type === 'info') {
+    feedbackIcon.className = 'fas fa-info-circle text-5xl text-blue-400 mb-4';
+  } else if (type === 'deleted') {
+    feedbackIcon.className = 'fas fa-trash-alt text-5xl text-red-400 mb-4';
+  } else if (type === 'download') {
+    feedbackIcon.className = 'fas fa-download text-5xl text-purple-400 mb-4';
+  }
+
+  feedbackModal.classList.remove('hidden');
+
+  setTimeout(() => {
+    feedbackModal.classList.add('hidden');
+  }, duration);
+}
+
+function confirmLogDeletion(logIndex) {
+  const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+  deleteConfirmModal.classList.remove('hidden');
+
+  const confirmBtn = document.getElementById('confirmDeleteBtn');
+  const cancelBtn = document.getElementById('cancelDeleteBtn');
+
+  // Clean previous listeners
+  confirmBtn.onclick = null;
+  cancelBtn.onclick = null;
+
+  confirmBtn.onclick = () => {
+    performLogDeletion(logIndex);
+    deleteConfirmModal.classList.add('hidden');
+  };
+
+  cancelBtn.onclick = () => {
+    deleteConfirmModal.classList.add('hidden');
+  };
+}
+
+// Perform actual deletion and show feedback
+function performLogDeletion(logIndex) {
+  logs.splice(logIndex, 1);
+  saveCloudData();
+  renderLogEntries();
+
+  showFeedback('Log Deleted Successfully!', 'deleted');
+}
+
 /***** Auth State Management *****/
 async function checkAuth() {
   const { data: { session } } = await supabaseClient.auth.getSession();
+  const wasJustRedirected = sessionStorage.getItem('redirectLogin');
+
   if (session) {
     currentUserId = session.user.id;
     document.getElementById('authContainer').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
+
+    const { data, error } = await supabaseClient
+      .from('logtrack')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .maybeSingle();
+
+    if (!data || !data.template || data.template.length === 0) {
+      document.getElementById('tutorial').classList.remove('hidden');
+      document.getElementById('templateBuilder').classList.remove('hidden');
+    }
+
     loadCloudData();
+
+    if (wasJustRedirected) {
+      showFeedback('Successfully Signed In!', 'success');
+      sessionStorage.removeItem('redirectLogin');
+    }
   } else {
     document.getElementById('authContainer').classList.remove('hidden');
     document.getElementById('appContainer').classList.add('hidden');
   }
 }
+
+
 
 supabaseClient.auth.onAuthStateChange((event, session) => {
   checkAuth();
@@ -32,21 +110,52 @@ document.getElementById('loginButton').addEventListener('click', async () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) alert(error.message);
-});
 
-document.getElementById('signupButton').addEventListener('click', async () => {
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-  const { error } = await supabaseClient.auth.signUp({ email, password });
   if (error) {
     alert(error.message);
   } else {
-    alert("A confirmation link has been sent to your email. Please confirm your account and then log in.");
+    showFeedback('Successfully Signed In!', 'success');
+  }
+});
+
+
+document.getElementById('signupButton').addEventListener('click', async () => {
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value.trim();
+  const username = document.getElementById('signupUsername').value.trim();
+
+  if (!email || !password || !username) {
+    showFeedback("All fields are required.", 'error');
+    return;
+  }
+
+  const { data, error: signUpError } = await supabaseClient.auth.signUp({
+    email,
+    password
+  });
+
+  if (signUpError) {
+    showFeedback(signUpError.message, 'error');
+    return;
+  }
+
+  const userId = data?.user?.id;
+  if (userId) {
+    const { error: insertError } = await supabaseClient
+      .from('users')
+      .insert([{ id: userId, username }]);
+
+    if (insertError) {
+      showFeedback(insertError.message, 'error');
+      return;
+    }
+
+    showFeedback("Signup successful! Please check your email to confirm.", 'success');
     document.getElementById('signupForm').classList.add('hidden');
     document.getElementById('loginForm').classList.remove('hidden');
   }
 });
+
 
 document.getElementById('showSignup').addEventListener('click', () => {
   document.getElementById('loginForm').classList.add('hidden');
@@ -68,6 +177,7 @@ document.getElementById('logoutButton').addEventListener('click', async () => {
 });
 
 document.getElementById('googleSignInButton')?.addEventListener('click', async () => {
+  sessionStorage.setItem('redirectLogin', true);
   const { error } = await supabaseClient.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -228,156 +338,203 @@ function initSortableTemplate() {
 /***** New / Edit Log Entry Form *****/
 function renderLogEntryForm(mode = 'new', logData = null) {
   const formContainer = document.getElementById('logEntryForm');
-  let html = `
-    <h2 class="text-xl font-semibold mb-4 text-purple-400 flex items-center">${mode === 'new' ? 'New Log Entry' : 'Edit Log Entry'}</h2>
+  formContainer.innerHTML = `
+    <div class="flex justify-between items-center">
+      <h2 class="text-xl font-semibold mb-4 text-purple-400">${mode === 'new' ? 'New Log Entry' : 'Edit Log Entry'}</h2>
+      <button id="closeLogEntryForm" class="text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+    </div>
     <form id="entryForm" class="space-y-4">
       <div class="mb-4">
-        <label for="date" class="block text-sm font-semibold mb-2 text-gray-300 font-mono">Date</label>
-        <input type="date" id="date" name="date" class="bg-gray-700 text-white p-3 rounded w-full font-mono" />
+        <label class="block font-semibold text-gray-300">Date</label>
+        <input type="date" id="date" class="bg-gray-700 text-white p-3 rounded w-full">
       </div>
       <div class="mb-4">
-        <label for="daily-notes" class="block text-sm font-semibold mb-2 text-gray-300 font-mono">Daily Notes</label>
-        <textarea id="daily-notes" name="daily-notes" class="bg-gray-700 text-white p-3 rounded w-full font-mono"></textarea>
-      </div>`;
-  // Build tracks from saved log data or from the template
-  let tracksToRender = [];
-  if (mode === 'edit' && logData && logData.tracks) {
-    tracksToRender = logData.tracks;
-  } else {
-    tracksToRender = template.length ? template.map(track => {
-      // Mark tracks coming from the template as prefilled so they are read-only in daily log
-      let defaultUnit = {
-        fields: track.units && track.units.length > 0 ? track.units[0].fields.map(field => ({
-          label: field.label,
-          type: field.type,
-          options: field.options || "",
-          value: ""
-        })) : []
-      };
-      return { label: track.label, units: [defaultUnit], prefilled: true };
-    }) : [];
-  }
-  tracksToRender.forEach((track, tIndex) => {
-    html += `
-      <div class="track-entry border border-gray-700 rounded p-4 mb-4 animate__animated animate__fadeIn" data-track-index="${tIndex}">
-        <div class="flex items-center justify-between mb-2">
-          <input type="text" class="track-label bg-gray-700 text-white p-3 rounded font-mono text-lg flex-grow" value="${track.label}" placeholder="Track Name" ${track.prefilled ? 'readonly' : ''} />
-          ${ track.prefilled ? `<button type="button" class="delete-track-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>` : '' }
-        </div>
-        <div class="units-container" data-track-index="${tIndex}">`;
-    track.units.forEach((unit, uIndex) => {
-      html += `<div class="unit-entry mb-2" data-unit-index="${uIndex}">`;
-      unit.fields.forEach((field, fIndex) => {
-        html += `<div class="field-entry mb-2 animate__animated animate__fadeIn flex flex-col" data-field-index="${fIndex}">
-          <div class="flex items-center justify-between">
-            <input type="text" class="field-label-input bg-gray-600 text-white p-2 rounded flex-grow font-mono" value="${field.label}" placeholder="Field Name" ${track.prefilled ? 'readonly' : ''} />
-            <button type="button" class="delete-field-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
-          </div>`;
-        if (field.type === 'textarea') {
-          html += `<textarea class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="${field.type}" placeholder="${field.label}">${field.value || ""}</textarea>`;
-        } else if (field.type === 'checkbox') {
-          html += `<input type="checkbox" class="field-value mt-2" data-type="${field.type}" ${field.value ? 'checked' : ''} />`;
-        } else if (field.type === 'select') {
-          let options = field.options ? field.options.split(',').map(opt => opt.trim()) : [];
-          html += `<select class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="${field.type}">`;
-          options.forEach(opt => {
-            html += `<option value="${opt}" ${field.value === opt ? 'selected' : ''}>${opt}</option>`;
-          });
-          html += `</select>`;
-        } else {
-          html += `<input type="${field.type}" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="${field.type}" value="${field.value || ""}" placeholder="${field.label}" />`;
-        }
-        html += `</div>`;
-      });
-      html += `<button type="button" class="add-field-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
-                 <i class="fas fa-plus mr-1"></i> Add Field
-               </button>`;
-      html += `</div>`;
-    });
-    html += `</div>
-             <button type="button" class="add-unit-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
-               <i class="fas fa-plus mr-1"></i> Add Unit
-             </button>
-           </div>`;
-  });
-  html += `<button type="button" id="addTrackEntry" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono flex items-center">
-             <i class="fas fa-plus mr-1"></i> Add Track
-           </button>`;
-  html += `<button id="saveEntry" type="button" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold font-mono">
-             ${mode==='new'?'Save Log Entry':'Save Changes'}
-           </button>
-           </form>`;
-  formContainer.innerHTML = html;
+        <label class="block font-semibold text-gray-300">Daily Notes</label>
+        <textarea id="daily-notes" class="bg-gray-700 text-white p-3 rounded w-full"></textarea>
+      </div>
+      <div id="tracksContainer"></div>
+      <button id="addNewTrackBtn" class="bg-purple-600 px-4 py-2 rounded">Add New Track</button>
+      <button id="saveEntry" class="mt-4 bg-green-600 text-white px-4 py-2 rounded">
+        ${mode === 'new' ? 'Save Log Entry' : 'Save Changes'}
+      </button>
+    </form>`;
+
   formContainer.classList.remove('hidden');
+  document.getElementById('closeLogEntryForm').onclick = () => formContainer.classList.add('hidden');
+
   document.getElementById('date').value = mode === 'edit' && logData ? logData.date : new Date().toISOString().split('T')[0];
   document.getElementById('daily-notes').value = mode === 'edit' && logData ? logData.dailyNotes : "";
-  const entryForm = document.getElementById('entryForm');
-  entryForm.addEventListener('click', function(e) {
-    if(e.target.closest('.delete-track-entry')) {
-      e.target.closest('.track-entry').remove();
-    }
-    if(e.target.closest('.delete-field-entry')) {
-      e.target.closest('.field-entry').remove();
-    }
-    if(e.target.closest('.add-unit-entry')) {
-      const trackEntry = e.target.closest('.track-entry');
-      const unitsContainer = trackEntry.querySelector('.units-container');
-      const unitIndex = unitsContainer.querySelectorAll('.unit-entry').length;
-      let unitHtml = `<div class="unit-entry mb-2" data-unit-index="${unitIndex}">
-                        <div class="field-entry mb-2 flex flex-col animate__animated animate__fadeIn" data-field-index="0">
-                          <div class="flex items-center justify-between">
-                            <input type="text" class="field-label-input bg-gray-600 text-white p-2 rounded flex-grow font-mono" value="New Field" placeholder="Field Name" />
-                            <button type="button" class="delete-field-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
-                          </div>
-                          <input type="text" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="text" placeholder="Field Value" />
-                        </div>
-                        <button type="button" class="add-field-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
-                          <i class="fas fa-plus mr-1"></i> Add Field
-                        </button>
-                      </div>`;
-      unitsContainer.insertAdjacentHTML('beforeend', unitHtml);
-    }
-    if(e.target.closest('.add-field-entry')) {
-      const unitEntry = e.target.closest('.unit-entry');
-      const fieldIndex = unitEntry.querySelectorAll('.field-entry').length;
-      let fieldHtml = `<div class="field-entry mb-2 animate__animated animate__fadeIn flex flex-col" data-field-index="${fieldIndex}">
-                         <div class="flex items-center justify-between">
-                           <input type="text" class="field-label-input bg-gray-600 text-white p-2 rounded flex-grow font-mono" value="New Field" placeholder="Field Name" />
-                           <button type="button" class="delete-field-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
-                         </div>
-                         <input type="text" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="text" placeholder="Field Value" />
-                       </div>`;
-      unitEntry.insertAdjacentHTML('beforeend', fieldHtml);
-    }
+
+  renderTracks(mode, logData);
+
+  document.getElementById('addNewTrackBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    addDynamicTrack();
   });
-  document.getElementById('addTrackEntry').addEventListener('click', () => {
-    const form = document.getElementById('entryForm');
-    const newTrackIndex = form.querySelectorAll('.track-entry').length;
-    // Newly added track in a daily log is editable so do not mark as prefilled
-    let newTrackHtml = `<div class="track-entry border border-gray-700 rounded p-4 mb-4 animate__animated animate__fadeIn" data-track-index="${newTrackIndex}">
-                          <div class="flex items-center justify-between mb-2">
-                            <input type="text" class="track-label bg-gray-700 text-white p-3 rounded font-mono text-lg flex-grow" value="New Track" placeholder="Track Name" />
-                          </div>
-                          <div class="units-container" data-track-index="${newTrackIndex}">
-                            <div class="unit-entry" data-unit-index="0">
-                              <div class="field-entry mb-2 flex flex-col animate__animated animate__fadeIn" data-field-index="0">
-                                <div class="flex items-center justify-between">
-                                  <input type="text" class="field-label-input bg-gray-600 text-white p-2 rounded flex-grow font-mono" value="New Field" placeholder="Field Name" />
-                                  <button type="button" class="delete-field-entry text-red-500 hover:text-red-600 ml-2"><i class="fas fa-trash"></i></button>
-                                </div>
-                                <input type="text" class="field-value bg-gray-600 text-white p-2 rounded w-full font-mono mt-2" data-type="text" placeholder="Field Value" />
-                              </div>
-                              <button type="button" class="add-field-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
-                                <i class="fas fa-plus mr-1"></i> Add Field
-                              </button>
-                            </div>
-                            <button type="button" class="add-unit-entry bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono mt-2 flex items-center">
-                              <i class="fas fa-plus mr-1"></i> Add Unit
-                            </button>
-                          </div>
-                        </div>`;
-    form.insertAdjacentHTML('beforeend', newTrackHtml);
+}
+
+// Add these new functions for dynamic entry editing:
+function addDynamicTrack(trackData = null, container = null) {
+  const tracksContainer = container || document.getElementById('tracksContainer');
+  const trackHtml = document.createElement('div');
+  trackHtml.className = 'track-entry bg-gray-800 p-4 rounded mb-4 animate__fadeIn';
+
+  trackHtml.innerHTML = `
+    <div class="flex justify-between items-center">
+      <input type="text" placeholder="Track Name" class="track-label bg-gray-700 p-2 rounded flex-grow mr-2" value="${trackData ? trackData.label : ''}">
+      <button class="delete-track text-red-500"><i class="fas fa-trash"></i></button>
+    </div>
+    <div class="units-container mt-3"></div>
+    <button class="add-unit bg-blue-500 px-3 py-1 rounded mt-3"><i class="fas fa-plus"></i> Add Unit</button>`;
+
+  tracksContainer.appendChild(trackHtml);
+
+  trackHtml.querySelector('.delete-track').onclick = (e) => {
+    e.preventDefault();
+    trackHtml.remove();
+  };
+
+  const unitsContainer = trackHtml.querySelector('.units-container');
+
+  if (trackData && trackData.units) {
+    trackData.units.forEach(unit => {
+      renderDynamicUnit(unitsContainer, unit);
+    });
+  }
+
+  trackHtml.querySelector('.add-unit').onclick = (e) => {
+    e.preventDefault();
+    renderDynamicUnit(unitsContainer);
+  };
+}
+
+
+function renderDynamicUnit(unitsContainer, unitData = null) {
+  const unitHtml = document.createElement('div');
+  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__fadeIn';
+
+  unitHtml.innerHTML = `
+    <input type="text" placeholder="Unit Label" class="unit-label bg-gray-600 p-2 rounded w-full mb-2" value="${unitData ? unitData.label : ''}">
+    <div class="fields-container"></div>
+    <button class="add-field bg-green-500 px-3 py-1 rounded mt-2"><i class="fas fa-plus"></i> Add Field</button>`;
+
+  unitsContainer.appendChild(unitHtml);
+
+  const fieldsContainer = unitHtml.querySelector('.fields-container');
+
+  if (unitData && unitData.fields) {
+    unitData.fields.forEach(field => {
+      renderDynamicField(fieldsContainer, field);
+    });
+  }
+
+  unitHtml.querySelector('.add-field').onclick = (e) => {
+    e.preventDefault();
+    renderDynamicField(fieldsContainer);
+  };
+}
+
+
+function renderDynamicField(fieldsContainer, fieldData = null) {
+  const fieldHtml = document.createElement('div');
+  fieldHtml.className = 'field-entry mb-2 animate__fadeIn';
+  
+  fieldHtml.innerHTML = `
+    <input type="text" placeholder="Field Label" class="field-label-input bg-gray-600 p-2 rounded mr-2" value="${fieldData ? fieldData.label : ''}">
+    <select class="field-type bg-gray-600 p-2 rounded mr-2">
+      <option value="text" ${fieldData?.type === 'text' ? 'selected' : ''}>Text</option>
+      <option value="number" ${fieldData?.type === 'number' ? 'selected' : ''}>Number</option>
+      <option value="date" ${fieldData?.type === 'date' ? 'selected' : ''}>Date</option>
+      <option value="textarea" ${fieldData?.type === 'textarea' ? 'selected' : ''}>Textarea</option>
+      <option value="checkbox" ${fieldData?.type === 'checkbox' ? 'selected' : ''}>Checkbox</option>
+      <option value="select" ${fieldData?.type === 'select' ? 'selected' : ''}>Select</option>
+    </select>
+    <input type="text" placeholder="Options (comma-separated)" class="field-options bg-gray-600 p-2 rounded ${fieldData?.type === 'select' ? '' : 'hidden'}" value="${fieldData?.options || ''}">
+    <button class="delete-field text-red-500"><i class="fas fa-trash"></i></button>
+    <div class="mt-2 field-input"></div>`;
+
+  fieldsContainer.appendChild(fieldHtml);
+
+  const typeSelect = fieldHtml.querySelector('.field-type');
+  const optionsInput = fieldHtml.querySelector('.field-options');
+  const fieldInputContainer = fieldHtml.querySelector('.field-input');
+
+  typeSelect.addEventListener('change', () => {
+    optionsInput.classList.toggle('hidden', typeSelect.value !== 'select');
+    updateDynamicInput(typeSelect.value, fieldInputContainer, fieldData?.value);
   });
+
+  updateDynamicInput(fieldData?.type || 'text', fieldInputContainer, fieldData?.value);
+
+  fieldHtml.querySelector('.delete-field').onclick = () => fieldHtml.remove();
+}
+
+function updateDynamicInput(type, container, value = '') {
+  container.innerHTML = '';
+  let input;
+
+  if (type === 'textarea') {
+    input = document.createElement('textarea');
+    input.value = value;
+  } else {
+    input = document.createElement('input');
+    input.type = type === 'checkbox' ? 'checkbox' : type;
+    if (type === 'checkbox') input.checked = value;
+    else input.value = value;
+  }
+
+  input.className = 'field-value bg-gray-600 p-2 rounded w-full';
+  input.setAttribute('data-type', type);
+  container.appendChild(input);
+}
+
+function updateDynamicInput(type, container) {
+  container.innerHTML = '';
+  const input = document.createElement(type === 'textarea' ? 'textarea' : 'input');
+  input.className = 'field-value bg-gray-600 p-2 rounded w-full';
+  input.setAttribute('data-type', type);
+  if (type !== 'textarea' && type !== 'checkbox') {
+    input.type = type;
+  } else if (type === 'checkbox') {
+    input.type = 'checkbox';
+  }
+  container.appendChild(input);
+}
+
+
+function renderTracks(mode = 'new', logData = null) {
+  const container = document.getElementById('tracksContainer');
+  container.innerHTML = '';
+
+  const tracks = mode === 'edit' && logData ? logData.tracks : template;
+
+  tracks.forEach(track => {
+    addDynamicTrack(track, container);
+  });
+}
+
+function renderUnit(container, fieldsTemplate, prefilled = false) {
+  const unitHtml = document.createElement('div');
+  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__fadeIn';
+
+  fieldsTemplate.forEach(field => {
+    unitHtml.innerHTML += `
+      <div class="field-entry mb-2">
+        <label class="font-semibold">${field.label}</label>
+        ${field.type === 'textarea' ? 
+          `<textarea data-type="textarea" class="field-value bg-gray-600 p-2 rounded w-full"></textarea>` :
+          field.type === 'checkbox' ?
+          `<input data-type="checkbox" type="checkbox" class="field-value">` :
+          field.type === 'select' ?
+          `<select data-type="select" class="field-value bg-gray-600 p-2 rounded w-full">
+            ${field.options.split(',').map(opt => `<option>${opt.trim()}</option>`).join('')}
+          </select>` :
+          `<input data-type="${field.type}" type="${field.type}" class="field-value bg-gray-600 p-2 rounded w-full">`
+        }
+      </div>`;
+  });
+
+  container.appendChild(unitHtml);
 }
 
 /***** Gathering Form Data *****/
@@ -388,7 +545,7 @@ function getLogEntryFormData() {
   const trackEntries = document.querySelectorAll('.track-entry');
   trackEntries.forEach(trackEntry => {
     const trackLabelInput = trackEntry.querySelector('.track-label');
-    const trackLabel = trackLabelInput ? trackLabelInput.value : "Unnamed Track";
+    const trackLabel = trackLabelInput ? trackLabelInput.value : trackEntry.querySelector('h3')?.textContent || "Unnamed Track";
     let trackData = { label: trackLabel, units: [] };
     const unitEntries = trackEntry.querySelectorAll('.unit-entry');
     unitEntries.forEach(unitEntry => {
@@ -396,17 +553,18 @@ function getLogEntryFormData() {
       const fieldEntries = unitEntry.querySelectorAll('.field-entry');
       fieldEntries.forEach(fieldEntry => {
         const fieldLabelInput = fieldEntry.querySelector('.field-label-input');
-        const fieldLabel = fieldLabelInput ? fieldLabelInput.value : "Unnamed Field";
+        const fieldLabel = fieldLabelInput ? fieldLabelInput.value : fieldEntry.querySelector('label')?.textContent || "Unnamed Field";
         const inputEl = fieldEntry.querySelector('.field-value');
+        const fieldType = inputEl.getAttribute('data-type') || 'text';
         let value;
-        if (inputEl.getAttribute('data-type') === 'checkbox') {
+        if (fieldType === 'checkbox') {
           value = inputEl.checked;
         } else {
           value = inputEl.value;
         }
         unitData.fields.push({
           label: fieldLabel,
-          type: inputEl.getAttribute('data-type'),
+          type: fieldType,
           value: value,
           options: ""
         });
@@ -488,48 +646,72 @@ function renderLogEntries(filteredLogs = logs) {
     });
   });
   document.querySelectorAll('.delete-log-button').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.onclick = (e) => {
+      e.preventDefault();
       const logIndex = e.currentTarget.getAttribute('data-log-index');
-      logs.splice(logIndex, 1);
-      saveCloudData();
-      renderLogEntries();
-    });
+      confirmLogDeletion(logIndex);
+    };
   });
 }
 
 function editLogEntry(logIndex) {
   const log = logs[logIndex];
   renderLogEntryForm('edit', log);
-  document.getElementById('saveEntry').addEventListener('click', () => {
+
+  document.getElementById('saveEntry').onclick = (e) => {
+    e.preventDefault();
     const updatedLog = getLogEntryFormData();
+    let templateUpdated = false;
+
     if (JSON.stringify(extractStructureFromLog(updatedLog)) !== JSON.stringify(template)) {
       if (confirm("Your daily log structure differs from the current template. Update template with the new structure?")) {
         template = extractStructureFromLog(updatedLog);
         renderTemplateTracks();
-        saveCloudData();
+        templateUpdated = true;
       }
     }
+
     logs[logIndex] = updatedLog;
     saveCloudData();
     renderLogEntries();
     document.getElementById('logEntryForm').classList.add('hidden');
-  });
+
+    showFeedback('Log Entry Updated!');
+
+    if (templateUpdated) {
+      setTimeout(() => {
+        showFeedback('Template Updated Successfully!', 'info');
+      }, 1600); // Slight delay to avoid overlapping modals
+    }
+  };
 }
 
 function saveNewLogEntry() {
   const newLog = getLogEntryFormData();
+  let templateUpdated = false;
+
   if (JSON.stringify(extractStructureFromLog(newLog)) !== JSON.stringify(template)) {
     if (confirm("Your daily log structure differs from the current template. Update template with the new structure?")) {
       template = extractStructureFromLog(newLog);
       renderTemplateTracks();
-      saveCloudData();
+      templateUpdated = true;
     }
   }
+
   logs.unshift(newLog);
   saveCloudData();
   renderLogEntries();
   document.getElementById('logEntryForm').classList.add('hidden');
+
+  showFeedback('Log Entry Saved!');
+
+  if (templateUpdated) {
+    setTimeout(() => {
+      showFeedback('Template Updated Successfully!', 'info');
+    }, 1600); // Slight delay to avoid overlapping modals
+  }
 }
+
 
 /***** Enhanced Search Functionality *****/
 function logMatchesSearch(log, term) {
@@ -647,15 +829,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('templateBuilder').classList.add('hidden');
     document.getElementById('tutorial').classList.add('hidden');
     saveCloudData();
-    alert('Template saved! You can now create log entries.');
-  });
-  document.getElementById('logEntryForm').addEventListener('click', (e) => {
+  
+    showFeedback('Template Saved Successfully!');
+  });  
+  document.getElementById('logEntryForm').onclick = (e) => {
     if (e.target.id === 'saveEntry' && document.getElementById('entryForm')) {
+      e.preventDefault();
       if (e.target.textContent.includes('Save Log Entry')) {
         saveNewLogEntry();
       }
     }
-  });
+  };  
   document.getElementById('searchBar').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     const filtered = logs.filter(log => logMatchesSearch(log, term));
@@ -670,10 +854,14 @@ document.addEventListener('DOMContentLoaded', () => {
     a.download = `logtrack-export-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  });
+  
+    // Display feedback modal
+    showFeedback('Logs Exported Successfully!', 'download');
+  });  
   loadCloudData();
   // Hide loading screen after content loads
   const loadingScreen = document.getElementById('loadingScreen');
   loadingScreen.classList.add('animate__fadeOut');
   setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
+    
 });

@@ -135,3 +135,8 @@ button:hover { transform: scale(1.02); }
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Optional custom feedback modal styles */
+#feedbackModal {
+  transition: opacity 0.5s ease-in-out;
+}
