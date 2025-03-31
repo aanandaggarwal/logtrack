@@ -64,7 +64,12 @@ document.getElementById('logoutButton').addEventListener('click', async () => {
 });
 
 document.getElementById('googleSignInButton')?.addEventListener('click', async () => {
-  const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'https://aanandaggarwal.github.io/logtrack/'
+    }
+  });
   if (error) alert(error.message);
 });
 
