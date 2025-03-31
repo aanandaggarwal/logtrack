@@ -1,60 +1,85 @@
+/* Base Styles */
 body {
   font-family: 'Inter', sans-serif;
   user-select: none;
-  background-color: #1c1c1c; /* Dark gray/black background */
-  color: #ffffff;           /* White text */
+  background-color: #1c1c1c;
+  color: #ffffff;
 }
 
-.log-entry {
-  font-family: 'Century Gothic', sans-serif;
-}
-
-/* Background and border colors */
+/* Backgrounds & Borders */
 .bg-gray-900 { background-color: #1c1c1c; }
 .text-gray-200 { color: #ffffff; }
 .border-gray-800 { border-color: #000000; }
 .bg-gray-800 { background-color: #2e2e2e; }
 
-/* Accent colors */
+/* Accent Colors */
 .bg-purple-600 { background-color: #8b5cf6; }
 .hover\:bg-purple-700:hover { background-color: #7c3aed; }
 .text-purple-400 { color: #8b5cf6; }
-
-/* Button colors (red, green, blue as needed) */
 .bg-blue-600 { background-color: #3b82f6; }
 .hover\:bg-blue-700:hover { background-color: #2563eb; }
 .bg-green-600 { background-color: #22c55e; }
 .hover\:bg-green-700:hover { background-color: #16a34a; }
 .text-red-500 { color: #f87171; }
 
-/* Increase checkbox size and adjust alignment */
-input[type="checkbox"] {
-  width: 1.5rem;
-  height: 1.5rem;
-  vertical-align: middle;
-}
-
-/* Animations */
-.fade-in {
-  animation: fadeIn 0.5s ease-in-out;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Allow text selection in inputs */
-input, textarea, select {
+/* Form & Input Styles */
+input,
+textarea,
+select {
+  font-family: monospace;
   user-select: text !important;
 }
-.font-century-gothic {
-  font-family: 'Century Gothic', sans-serif;
+
+/* Custom Drag Handle */
+.handle-track i { cursor: grab; }
+
+/* Animation */
+.fade-in { animation: fadeIn 0.5s ease-in-out; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Additional styling for log entry cards */
+/* Buttons */
+button { transition: background-color 0.2s ease, transform 0.2s ease; }
+button:hover { transform: scale(1.02); }
+
+/* Boxed forms and cards with rounded corners */
+.track-container,
+.unit-container,
+.field-container,
+.custom-track,
+.custom-unit,
+.custom-field,
+.log-entry-card { border-radius: 0.5rem; }
+
+/* Log Entry Card Redesign */
 .log-entry-card {
-  transition: transform 0.2s ease;
+  background: #2e2e2e;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #444;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .log-entry-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+.log-entry-card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: monospace;
+}
+.log-entry-card th,
+.log-entry-card td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #444;
+  text-align: left;
+}
+
+/* Responsive Layout */
+@media (max-width: 640px) {
+  header, main { padding: 1rem; }
+  .log-entry-card { padding: 1rem; }
 }
