@@ -269,39 +269,98 @@ button:hover { transform: scale(1.02); }
 }
 
 @media (max-width: 640px) {
-  /* Header: vertical stacking for logo and button row */
+  /* --- Header Adjustments --- */
   header {
     flex-direction: column;
     align-items: center;
-    padding: 0.5rem;
+    padding: 0.25rem;
   }
-
-  /* Hide text labels to show icon only */
+  
+  /* Hide any text labels so only icons show */
   .logtrack-label,
   .btn-label {
     display: none;
   }
-
-  /* Center the logo icon and add spacing below it */
+  
+  /* Logo: center with small margin below */
   #logo {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
   }
-
-  /* Button container: horizontal row with nice spacing */
+  
+  /* Header button container: horizontal row with reduced gap */
   header > div.flex {
     flex-direction: row;
     justify-content: center;
-    gap: 0.75rem;
-    width: 100%;
+    gap: 0.5rem;
+    width: auto;
   }
-
-  /* Style header buttons as rounded rectangles */
+  
+  /* Header buttons: smaller, reduced padding, and smaller font */
   .header-btn {
     padding: 0.5rem 1.5rem;
     border-radius: 0.5rem;
+    font-size: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
   }
+  
+  /* --- Template Builder & New Log Entry Adjustments --- */
+  /* Ensure track names and icons have proper spacing */
+  #templateBuilder,
+  #logEntryForm {
+    padding: 0.75rem;
+    margin: 0.5rem;
+  }
+  
+  /* Track containers in Template Builder */
+  #templateBuilder .track-container {
+    margin: 0.5rem 0;
+    padding: 0.75rem;
+  }
+  
+  /* For the track header (track name, icon, and delete button) */
+  #templateBuilder .track-container .handle-track {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Adjust inputs inside Template Builder to use full width */
+  #templateBuilder input {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Unit containers in Template Builder */
+  #templateBuilder .unit-container {
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* New Log Entry form: reduce gaps between fields */
+  #logEntryForm form > div {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Ensure dynamic field entries stack properly on mobile */
+  .field-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  .field-entry input.field-label-input,
+  .field-entry select.field-type,
+  .field-entry input.field-options,
+  .field-entry .field-input {
+    width: 100%;
+    margin: 0;
+  }
+  
+  /* Optional: Reduce icon sizes in dynamic fields */
+  .field-entry .prefilled-field-type,
+  .field-entry .prefilled-field-label {
+    font-size: 0.85rem;
+  }
 }
-
