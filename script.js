@@ -67,10 +67,15 @@ async function checkAuth() {
       sessionStorage.removeItem('redirectLogin');
     }
   } else {
+    // No active session; show authentication container.
     document.getElementById('authContainer').classList.remove('hidden');
     document.getElementById('appContainer').classList.add('hidden');
+    // Ensure we respect the minimum loading delay before hiding the loading screen.
+    await waitUntilMinLoadingTime();
+    hideLoadingScreen();
   }
 }
+
 supabaseClient.auth.onAuthStateChange((event, session) => { checkAuth(); });
 
 /***** Auth Functions *****/
@@ -127,7 +132,7 @@ document.getElementById('forgotPasswordLink')?.addEventListener('click', async (
 
 /***** Cloud Data Functions *****/
 function waitUntilMinLoadingTime() {
-  const minLoadingTime = 2000; // 3 seconds
+  const minLoadingTime = 1300; // 1.3 seconds
   const elapsed = Date.now() - loadingStartTime;
   const remaining = Math.max(0, minLoadingTime - elapsed);
   return new Promise(resolve => setTimeout(resolve, remaining));
@@ -316,7 +321,7 @@ function renderLogEntryForm(mode = 'new', logData = null) {
   formContainer.innerHTML = `
     <div class="flex justify-between items-center">
       <h2 class="text-xl font-semibold mb-4 text-purple-400">
-        ${mode === 'new' ? '🚀 New Log Entry' : '🚀 Edit Log Entry'}
+        ${mode === 'new' ? '🚀 New Log Entry' : '✏️ Edit Log Entry'}
       </h2>
       <button id="closeLogEntryForm" type="button" class="text-gray-400 hover:text-red-500">
         <i class="fas fa-times"></i>
@@ -333,7 +338,7 @@ function renderLogEntryForm(mode = 'new', logData = null) {
       </div>
       <div id="tracksContainer"></div>
       <button type="button" id="addNewTrackBtn" class="bg-purple-600 px-4 py-2 rounded">
-        <i class="fas fa-plus mr-1"></i> Add New Track
+        <i class="fas fa-plus-circle mr-1"></i> 📝 Add New Track
       </button>
       <button type="submit" id="saveEntry" class="mt-4 bg-green-600 text-white px-4 py-2 rounded">
         ${mode === 'new' ? '💾 Save Log Entry' : '💾 Save Changes'}
@@ -373,6 +378,7 @@ function renderLogEntryForm(mode = 'new', logData = null) {
   }
 }
 
+
 /***** Helper Functions for New Log Entry *****/
 function renderTracksForNew() {
   const container = document.getElementById('tracksContainer');
@@ -387,10 +393,14 @@ function renderTracksForNew() {
           <i class="fas fa-dumbbell text-purple-400 mr-2"></i>
           <span class="font-semibold text-purple-300 text-lg prefilled-track-label">${track.label}</span>
         </div>
-        <button type="button" class="delete-track text-red-500"><i class="fas fa-trash"></i></button>
+        <button type="button" class="delete-track text-red-500">
+          <i class="fas fa-trash"></i>
+        </button>
       </div>
       <div class="units-container space-y-4"></div>
-      <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">Add Unit</button>
+      <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">
+        <i class="fas fa-plus-circle mr-1"></i> 🏗️ Add Unit
+      </button>
     `;
     trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
       e.preventDefault();
@@ -408,6 +418,7 @@ function renderTracksForNew() {
     container.appendChild(trackHtml);
   });
 }
+
 
 function renderPrefilledUnitNew(unitsContainer, unitData) {
   const unitHtml = document.createElement('div');
@@ -471,10 +482,14 @@ function addDynamicTrack(container = null) {
   trackHtml.innerHTML = `
     <div class="flex justify-between items-center mb-2">
       <input type="text" placeholder="Track Name" class="track-label bg-gray-700 p-2 rounded flex-grow mr-2" value="">
-      <button type="button" class="delete-track text-red-500"><i class="fas fa-trash"></i></button>
+      <button type="button" class="delete-track text-red-500">
+        <i class="fas fa-trash"></i>
+      </button>
     </div>
     <div class="units-container"></div>
-    <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">Add Unit</button>
+    <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">
+      <i class="fas fa-plus-circle mr-1"></i> 🏗️ Add Unit
+    </button>
   `;
   const trackInput = trackHtml.querySelector('.track-label');
   trackInput.addEventListener('focus', function() {
@@ -505,16 +520,21 @@ function addDynamicTrack(container = null) {
   });
 }
 
+
 function addDynamicUnit(unitsContainer) {
   const unitHtml = document.createElement('div');
   unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeIn relative';
   unitHtml.innerHTML = `
     <div class="relative">
       <input type="text" placeholder="Unit Label" class="unit-label bg-gray-600 p-2 rounded w-full mb-2" value="">
-      <button type="button" class="delete-unit absolute top-0 right-0 text-red-500"><i class="fas fa-times-circle"></i></button>
+      <button type="button" class="delete-unit absolute top-0 right-0 text-red-500">
+        <i class="fas fa-times-circle"></i>
+      </button>
     </div>
     <div class="fields-container"></div>
-    <button type="button" class="add-field bg-green-500 px-3 py-1 rounded mt-2"><i class="fas fa-plus"></i> Add Field</button>
+    <button type="button" class="add-field bg-green-500 px-3 py-1 rounded mt-2">
+      <i class="fas fa-plus-circle mr-1"></i> ✍️ Add Field
+    </button>
   `;
   const unitInput = unitHtml.querySelector('.unit-label');
   unitInput.addEventListener('focus', function() {
@@ -539,6 +559,7 @@ function addDynamicUnit(unitsContainer) {
   unitsContainer.appendChild(unitHtml);
   unitHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
+
 
 function renderUnitEdit(unitsContainer, unitData) {
   const unitHtml = document.createElement('div');
@@ -618,11 +639,13 @@ function renderDynamicFieldNew(fieldsContainer, fieldData = {}) {
   const labelText = fieldData.label || "";
   const typeText = fieldData.type || "text";
   const optionsText = fieldData.options || "";
+  // Determine an emoji based on the field type
+  const fieldEmoji = typeText === 'date' ? '📆' :
+                     typeText === 'number' ? '🔢' :
+                     typeText === 'checkbox' ? '☑️' : '📌';
   fieldHtml.innerHTML = `
     <div class="flex items-center space-x-2">
-      <span class="prefilled-field-label font-semibold text-gray-300">${labelText}</span>
-      <span class="prefilled-field-type text-gray-300">(${typeText})</span>
-      ${ typeText === "select" ? `<span class="prefilled-field-options text-gray-300">[${optionsText}]</span>` : "" }
+      <span class="prefilled-field-label font-semibold text-gray-300">${fieldEmoji} ${labelText}</span>
       <button type="button" class="delete-field text-red-500"><i class="fas fa-trash"></i></button>
     </div>
     <div class="mt-2 field-input"></div>
@@ -822,12 +845,13 @@ function renderLogEntries(filteredLogs = logs) {
     const card = document.createElement('div');
     card.className = 'log-entry-card bg-gray-800 border border-gray-700 rounded-2xl p-6 mb-6 shadow-md transition transform hover:-translate-y-1 hover:shadow-lg animate__animated animate__fadeIn';
     
+    // Header with modern date icon
     const header = document.createElement('div');
     header.className = 'flex justify-between items-start mb-4';
     
     const dateEl = document.createElement('h3');
     dateEl.className = 'text-xl font-semibold text-purple-400';
-    dateEl.innerHTML = `<span title="Date">📅</span> ${log.date}`;
+    dateEl.innerHTML = `<span title="Date">🗓️</span> ${log.date}`;
     
     const actionButtons = document.createElement('div');
     actionButtons.className = 'flex space-x-3';
@@ -855,13 +879,16 @@ function renderLogEntries(filteredLogs = logs) {
     card.appendChild(header);
     card.appendChild(notes);
     
+    // Render each track with updated icon for track header
     log.tracks.forEach(track => {
       const trackSection = document.createElement('div');
       trackSection.className = 'mb-5';
       const trackTitle = document.createElement('h4');
       trackTitle.className = 'text-lg font-semibold text-gray-100 mb-2 border-b border-gray-600 pb-1';
-      trackTitle.innerHTML = `<i class="fas fa-dumbbell text-purple-400 mr-2"></i><span title="Track">💪 ${track.label}</span>`;
+      trackTitle.innerHTML = `<i class="fas fa-chart-line text-purple-400 mr-2"></i><span title="Track">📊 ${track.label}</span>`;
       trackSection.appendChild(trackTitle);
+      
+      // Render units and their fields with modern emojis
       track.units.forEach(unit => {
         const unitBlock = document.createElement('div');
         unitBlock.className = 'bg-gray-700 p-4 rounded-xl mb-3 space-y-2';
@@ -873,7 +900,18 @@ function renderLogEntries(filteredLogs = logs) {
           label.textContent = field.label;
           const value = document.createElement('span');
           value.className = 'text-sm text-gray-100';
-          const emoji = field.type === 'number' ? '🔢' : field.type === 'date' ? '📆' : field.type === 'checkbox' ? '✅' : '📌';
+          let emoji;
+          if (field.type === 'checkbox') {
+            emoji = field.value ? '✅' : '❌';
+          } else if (field.type === 'number') {
+            emoji = '🔢';
+          } else if (field.type === 'date') {
+            emoji = '🗓️';
+          } else if (field.type === 'select') {
+            emoji = '🔽';
+          } else {
+            emoji = '💬';
+          }
           value.innerHTML = `${emoji} ${field.value}`;
           fieldRow.appendChild(label);
           fieldRow.appendChild(value);
@@ -886,6 +924,7 @@ function renderLogEntries(filteredLogs = logs) {
     
     logEntriesDiv.appendChild(card);
     
+    // Attach events for edit and delete
     editBtn.addEventListener('click', (e) => {
       const logIndex = e.currentTarget.getAttribute('data-log-index');
       editLogEntry(logIndex);
@@ -949,8 +988,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('templateBuilder').classList.add('hidden');
   });
   document.getElementById('newEntryButton').addEventListener('click', () => {
-    renderLogEntryForm('new');
-  });
+    const logEntryForm = document.getElementById('logEntryForm');
+    const templateBuilder = document.getElementById('templateBuilder');
+    const mainContent = document.querySelector('main');
+    
+    // Hide template builder if open
+    templateBuilder.classList.add('hidden');
+    mainContent.classList.remove('hidden');
+    
+    // Toggle the new log entry form
+    if (!logEntryForm.classList.contains('hidden')) {
+      logEntryForm.classList.add('hidden');
+    } else {
+      renderLogEntryForm('new');
+    }
+  });  
   document.getElementById('templateButton').addEventListener('click', () => {
     document.getElementById('templateBuilder').classList.toggle('hidden');
     document.getElementById('logEntryForm').classList.add('hidden');

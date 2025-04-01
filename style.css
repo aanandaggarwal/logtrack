@@ -297,7 +297,7 @@ button:hover { transform: scale(1.02); }
   
   /* Header buttons: smaller, reduced padding, and smaller font */
   .header-btn {
-    padding: 0.5rem 1.5rem;
+    padding: 0.75rem 2rem;
     border-radius: 0.5rem;
     font-size: 0.75rem;
     display: flex;
@@ -363,4 +363,32 @@ button:hover { transform: scale(1.02); }
   .field-entry .prefilled-field-label {
     font-size: 0.85rem;
   }
+}
+
+/* Mobile adjustments for authentication forms */
+@media (max-width: 640px) {
+  #authForms {
+    padding: 0 1rem;
+  }
+}
+
+/* Search Bar Styling */
+#searchBar {
+  display: block;
+  width: 90%;
+  max-width: 600px;
+  margin: 0 auto; /* Centers the element horizontally */
+  box-sizing: border-box;
+}
+
+/* Template Builder dynamic select field adjustments */
+#templateBuilder .field-options {
+  margin-top: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure consistent button styling in Template Builder */
+#templateBuilder button {
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
