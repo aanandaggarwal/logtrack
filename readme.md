@@ -2,7 +2,7 @@
 
 ## Overview
 
-LogTrack is a personal web application I built to help me stay organized and track my daily progress in coding, studying, and interview prep. It features a customizable template system, dynamic log entry creation, and cloud persistence using Supabase. The app is designed with a modern, dark theme and smooth animations for an enjoyable user experience.
+LogTrack is a personal web application I built to help me stay organized and track my daily progress in coding, studying, and interview prep. It features a customizable template system, dynamic log entry creation, and cloud persistence using Supabase. The app is designed with a modern, dark theme, smooth animations, and comprehensive user-centric design elements for an enjoyable and productive user experience.
 
 ## Live Demo
 
@@ -20,7 +20,10 @@ LogTrack is a personal web application I built to help me stay organized and tra
 
 - `index.html`: Main page structure and layout
 - `style.css`: Custom dark theme, responsive layout, and animations
-- `script.js`: Full client-side logic (auth, template builder, logs, modals)
+- `script.js`: Full client-side logic (authentication, template builder, logs, modals)
+- `terms.html`: Comprehensive Terms of Service page
+- `privacy.html`: Detailed Privacy Policy page
+- `fonts/`: Local hosting of "Century Gothic" font files
 - `README.md`: Project summary, changelog, and roadmap
 - `CHANGELOG.md`: Full version history and feature changes
 
@@ -33,37 +36,40 @@ LogTrack is a personal web application I built to help me stay organized and tra
 
 ### 📋 Dynamic Log Entry Creation
 - Logs inherit the structure from your saved template
-- Add/delete units per track
+- Add/delete units per track dynamically
 - Dropdown fields are generated dynamically with customizable options
 - Auto-scroll and staggered field animations enhance user experience
 
 ### ☁️ Cloud Sync with Supabase
 - Secure user authentication (email/password + Google OAuth)
-- Logs and templates are saved per user
+- Logs and templates are saved per user securely
 - Row-level security protects user data
 
 ### 🎨 Polished UI/UX
-- Sticky header with responsive mobile layout
-- Animations on login, form creation, feedback modals, and log cards
-- Icon-only topbar for mobile screens
-- Feedback system with modals and status icons
-- Smooth unit transitions and modal behaviors
+- Sticky header and footer with responsive mobile layout
+- Interactive Privacy and Terms pages with animated page transitions
+- Fonts folder with Century Gothic for brand consistency
+- Comprehensive spacing and alignment optimization for desktop and mobile
+- Animations on login, forms, feedback modals, and log cards
+- Feedback system with intuitive modals and status icons
+- Consistent and intuitive iconography across application
 
 ## What I Did
 
-- **Built a custom template builder** using plain JavaScript, dynamically rendering nested components with drag-and-drop
-- **Wrote a full log management system**, complete with new/edit/delete flows and smooth transitions
-- **Integrated Supabase** for secure authentication and real-time data persistence
-- **Crafted an accessible and responsive UI** that looks good on both desktop and mobile
-- **Designed intuitive feedback patterns** to guide the user from template creation to daily entry logging
+- **Built a custom template builder** using plain JavaScript, dynamically rendering nested components with drag-and-drop.
+- **Developed a robust log management system**, including new/edit/delete flows with intuitive user interactions and transitions.
+- **Integrated Supabase** for secure authentication and real-time data persistence with JWT protection.
+- **Designed and implemented comprehensive Privacy and Terms of Service pages** with modern UI and responsive design.
+- **Crafted an accessible, responsive, and polished UI** that looks good on both desktop and mobile devices, consistent with modern design standards (clean compact, Swedish, Apple-inspired).
+- **Resolved various UI/UX and functionality bugs**, such as emoji duplication and spacing issues.
 
 ## Future Goals
 
-- 🔍 Advanced filtering and searching for logs  
-- 📈 Visual insights via progress charts  
-- 🔐 Enhanced authentication (MFA, login provider options)  
-- 📦 Modular refactor with a framework like React or Vue  
-- 💾 Offline-first experience with local caching
+- 🔍 Advanced filtering, searching, and analytics for logs
+- 📈 Visual insights via interactive progress charts
+- 🔐 Enhanced authentication options (MFA, more OAuth providers)
+- 📦 Modular refactoring into a framework (React or Vue)
+- 💾 Offline-first capabilities with robust local caching
 
 ## Changelog
 
@@ -75,7 +81,6 @@ LogTrack is a personal web application I built to help me stay organized and tra
 - Fonts folder included for local Century Gothic hosting.
 - Various bug fixes (including emoji duplication fix).
 
-
 ---
 
 ## License
@@ -85,4 +90,3 @@ This project is personal and open for educational and portfolio demonstration pu
 ---
 
 Built with 💻 by [Aanand Aggarwal]
-
