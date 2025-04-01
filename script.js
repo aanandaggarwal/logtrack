@@ -180,7 +180,7 @@ async function loadCloudData() {
         top: 0,
         behavior: 'instant'
     });
-    
+
     let fetchedData = null;
 
     if (!currentUserId) {
@@ -468,11 +468,15 @@ function renderTracksForNew() {
         <i class="fas fa-plus-circle mr-1"></i> Add Unit
       </button>
     `;
-        trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
-            e.preventDefault();
-            trackHtml.classList.add('animate__fadeOut');
-            setTimeout(() => trackHtml.remove(), 300);
-        });
+trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
+    e.preventDefault();
+    trackHtml.classList.add('animate__fadeOut');
+    setTimeout(() => {
+        const previousSibling = trackHtml.previousElementSibling || trackHtml.parentElement;
+        trackHtml.remove();
+        previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+});
         const unitsContainer = trackHtml.querySelector('.units-container');
         track.units.forEach(unit => {
             renderPrefilledUnitNew(unitsContainer, unit);
@@ -482,6 +486,13 @@ function renderTracksForNew() {
             e.preventDefault();
             const originalUnitData = JSON.parse(addUnitBtn.getAttribute('data-original-unit'));
             renderPrefilledUnitNew(unitsContainer, originalUnitData);
+            const newUnit = unitsContainer.lastElementChild;
+            if (newUnit) {
+                newUnit.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'end'
+                });
+            }
         });
         container.appendChild(trackHtml);
     });
@@ -510,8 +521,12 @@ function renderPrefilledUnitNew(unitsContainer, unitData) {
     unitHtml.querySelector('.delete-unit-button').addEventListener('click', (e) => {
         e.preventDefault();
         unitHtml.classList.add('animate__fadeOut');
-        setTimeout(() => unitHtml.remove(), 300);
-    });
+        setTimeout(() => {
+            const previousSibling = unitHtml.previousElementSibling || unitHtml.parentElement;
+            unitHtml.remove();
+            previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    });    
     unitsContainer.appendChild(unitHtml);
 }
 
@@ -665,8 +680,12 @@ function renderDynamicUnit(unitsContainer, unitData) {
     unitHtml.querySelector('.delete-unit').addEventListener('click', (e) => {
         e.preventDefault();
         unitHtml.classList.add('animate__fadeOut');
-        setTimeout(() => unitHtml.remove(), 300);
-    });
+        setTimeout(() => {
+            const previousSibling = unitHtml.previousElementSibling || unitHtml.parentElement;
+            unitHtml.remove();
+            previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    })
     const fieldsContainer = unitHtml.querySelector('.fields-container');
     // Render existing fields if any (editable fields)
     if (unitData.fields && unitData.fields.length > 0) {
@@ -805,7 +824,11 @@ function renderTracksForEdit(tracks) {
         trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
             e.preventDefault();
             trackHtml.classList.add('animate__fadeOut');
-            setTimeout(() => trackHtml.remove(), 300);
+            setTimeout(() => {
+                const previousSibling = trackHtml.previousElementSibling || trackHtml.parentElement;
+                trackHtml.remove();
+                previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
         });
         const unitsContainer = trackHtml.querySelector('.units-container');
         track.units.forEach(unit => {
@@ -853,8 +876,12 @@ function renderDynamicFieldNew(fieldsContainer, fieldData = {}) {
     fieldHtml.querySelector('.delete-field').addEventListener('click', (e) => {
         e.preventDefault();
         fieldHtml.classList.add('animate__fadeOut');
-        setTimeout(() => fieldHtml.remove(), 300);
-    });
+        setTimeout(() => {
+            const previousSibling = fieldHtml.previousElementSibling || fieldHtml.parentElement;
+            fieldHtml.remove();
+            previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    });    
 }
 
 function renderDynamicField(fieldsContainer, fieldData = {}) {
@@ -922,8 +949,12 @@ function renderDynamicField(fieldsContainer, fieldData = {}) {
     fieldHtml.querySelector('.delete-field').addEventListener('click', (e) => {
         e.preventDefault();
         fieldHtml.classList.add('animate__fadeOut');
-        setTimeout(() => fieldHtml.remove(), 300);
-    });
+        setTimeout(() => {
+            const previousSibling = fieldHtml.previousElementSibling || fieldHtml.parentElement;
+            fieldHtml.remove();
+            previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    });    
 }
 
 function updateDynamicInput(type, container, value = '', options = '') {
