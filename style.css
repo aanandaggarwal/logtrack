@@ -5,8 +5,8 @@ html {
 
 @font-face {
   font-family: 'Century Gothic';
-  src: url('/fonts/century-gothic.woff2') format('woff2'),
-      url('/fonts/century-gothic.woff') format('woff');
+  src: url('./fonts/century-gothic.woff2') format('woff2'),
+      url('./fonts/century-gothic.woff') format('woff');
   font-weight: normal, bold, bolder;
   font-style: normal;
 }
@@ -558,3 +558,32 @@ button:hover {
       align-items: stretch;
   }
 }
+
+/* Container for log entries to constrain max-width and center content */
+#logEntriesContainer {
+    max-width: 1000px; /* or your desired maximum width */
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    padding-left: 1rem; /* Adds responsive padding */
+    padding-right: 1rem;
+    box-sizing: border-box;
+}
+
+/* Ensure each individual log card takes full width of this narrower container */
+.log-entry-card {
+    width: 100%;
+}
+
+@keyframes loadingBackgroundFade {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  #loadingScreen {
+    background: linear-gradient(-45deg, #121212, #1c1c1c, #292929, #1c1c1c);
+    background-size: 400% 400%;
+    animation: loadingBackgroundFade 10s ease infinite;
+  }
+  

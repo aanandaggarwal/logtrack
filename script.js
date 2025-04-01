@@ -176,6 +176,11 @@ function hideLoadingScreen() {
 
 
 async function loadCloudData() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'instant'
+    });
+    
     let fetchedData = null;
 
     if (!currentUserId) {
@@ -1209,7 +1214,7 @@ document.getElementById('logo').addEventListener('click', (e) => {
     document.getElementById('appContainer').classList.remove('hidden');
     window.scrollTo({
         top: 0,
-        behavior: 'smooth'
+        behavior: 'instant'
     });
 });
 

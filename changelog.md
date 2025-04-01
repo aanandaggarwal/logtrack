@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
+## [0.2.1-alpha] - 2025-04-01
+### Added
+- Animated gradient background exclusively to the loading screen, enhancing visual appeal during app startup.
+
+### Changed
+- Updated viewport settings (maximum-scale=1, user-scalable=no) in index.html, privacy.html, and terms.html to ensure consistent zoom behavior and optimal mobile experience.
+
+---
+
 ## [0.2.0-alpha] - 2025-04-01
 
 ### Added
