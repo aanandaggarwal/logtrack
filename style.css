@@ -3,6 +3,14 @@ html {
   scroll-behavior: smooth;
 }
 
+@font-face {
+  font-family: 'Century Gothic';
+  src: url('/fonts/century-gothic.woff2') format('woff2'),
+       url('/fonts/century-gothic.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
 /* Base Styles */
 body {
   font-family: 'Inter', sans-serif;

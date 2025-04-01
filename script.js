@@ -272,7 +272,7 @@ function renderTemplateTracks() {
       });
       trackHtml += `
             </div>
-            <button class="add-field-button bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono" data-track-index="${tIndex}" data-unit-index="${uIndex}"><i class="fas fa-plus mr-1"></i> Add Field</button>
+            <button class="add-field-button bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono" data-track-index="${tIndex}" data-unit-index="${uIndex}"> ✍️ Add Field</button>
           </div>`;
     });
     trackHtml += `
@@ -337,12 +337,16 @@ function renderLogEntryForm(mode = 'new', logData = null) {
         <textarea id="daily-notes" class="bg-gray-700 text-white p-3 rounded w-full" placeholder="Share your thoughts..."></textarea>
       </div>
       <div id="tracksContainer"></div>
-      <button type="button" id="addNewTrackBtn" class="bg-purple-600 px-4 py-2 rounded">
-        <i class="fas fa-plus-circle mr-1"></i> 📝 Add New Track
-      </button>
-      <button type="submit" id="saveEntry" class="mt-4 bg-green-600 text-white px-4 py-2 rounded">
-        ${mode === 'new' ? '💾 Save Log Entry' : '💾 Save Changes'}
-      </button>
+      <div class="flex justify-center items-center space-x-4 mt-4">
+<div class="flex justify-center items-center space-x-4 mt-4">
+  <button id="addNewTrackBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded font-semibold flex items-center">
+  🛠️ Add Prep Track
+  </button>
+  <button id="saveEntry" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold flex items-center">
+  💾 Save Entry
+  </button>
+</div>
+</div>
     </form>`;
   formContainer.classList.remove('hidden');
 
@@ -399,7 +403,7 @@ function renderTracksForNew() {
       </div>
       <div class="units-container space-y-4"></div>
       <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">
-        <i class="fas fa-plus-circle mr-1"></i> 🏗️ Add Unit
+        <i class="fas fa-plus-circle mr-1"></i> Add Unit
       </button>
     `;
     trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
@@ -422,7 +426,7 @@ function renderTracksForNew() {
 
 function renderPrefilledUnitNew(unitsContainer, unitData) {
   const unitHtml = document.createElement('div');
-  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeIn relative';
+  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeInUp relative';
   unitHtml.innerHTML = `
     <div class="flex justify-between items-center mb-2">
       <span class="font-semibold text-gray-300 prefilled-unit-label">${unitData.label}</span>
@@ -488,7 +492,7 @@ function addDynamicTrack(container = null) {
     </div>
     <div class="units-container"></div>
     <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">
-      <i class="fas fa-plus-circle mr-1"></i> 🏗️ Add Unit
+     <i class="fas fa-plus-circle mr-1"></i> Add Unit
     </button>
   `;
   const trackInput = trackHtml.querySelector('.track-label');
@@ -523,7 +527,7 @@ function addDynamicTrack(container = null) {
 
 function addDynamicUnit(unitsContainer) {
   const unitHtml = document.createElement('div');
-  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeIn relative';
+  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeInUp relative';
   unitHtml.innerHTML = `
     <div class="relative">
       <input type="text" placeholder="Unit Label" class="unit-label bg-gray-600 p-2 rounded w-full mb-2" value="">
@@ -533,7 +537,7 @@ function addDynamicUnit(unitsContainer) {
     </div>
     <div class="fields-container"></div>
     <button type="button" class="add-field bg-green-500 px-3 py-1 rounded mt-2">
-      <i class="fas fa-plus-circle mr-1"></i> ✍️ Add Field
+     ✍️ Add Field
     </button>
   `;
   const unitInput = unitHtml.querySelector('.unit-label');
@@ -563,14 +567,14 @@ function addDynamicUnit(unitsContainer) {
 
 function renderUnitEdit(unitsContainer, unitData) {
   const unitHtml = document.createElement('div');
-  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeIn relative';
+  unitHtml.className = 'unit-entry bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeInUp relative';
   unitHtml.innerHTML = `
     <div class="flex justify-between items-center mb-2">
       <input type="text" placeholder="Unit Label" class="unit-label bg-gray-600 p-2 rounded w-full" value="${unitData.label}">
       <button type="button" class="delete-unit text-red-500"><i class="fas fa-times-circle"></i></button>
     </div>
     <div class="fields-container"></div>
-    <button type="button" class="add-field bg-green-500 px-3 py-1 rounded mt-2"><i class="fas fa-plus"></i> Add Field</button>
+    <button type="button" class="add-field bg-green-500 px-3 py-1 rounded mt-2"> ✍️ Add Field</button>
   `;
   unitHtml.querySelector('.delete-unit').addEventListener('click', (e) => {
     e.preventDefault();
@@ -603,7 +607,7 @@ function renderTracksForEdit(tracks) {
         <button type="button" class="delete-track text-red-500"><i class="fas fa-trash"></i></button>
       </div>
       <div class="units-container space-y-4"></div>
-      <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">Add Unit</button>
+      <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4"> <i class="fas fa-plus-circle mr-1"></i> Add Unit</button>
     `;
     const trackInput = trackHtml.querySelector('.track-label');
     trackInput.addEventListener('focus', function() {
@@ -635,7 +639,7 @@ function renderTracksForEdit(tracks) {
 /***** Dynamic Field Rendering *****/
 function renderDynamicFieldNew(fieldsContainer, fieldData = {}) {
   const fieldHtml = document.createElement('div');
-  fieldHtml.className = 'field-entry mb-2 animate__animated animate__fadeIn';
+  fieldHtml.className = 'field-entry mb-2 animate__animated animate__fadeInUp';
   const labelText = fieldData.label || "";
   const typeText = fieldData.type || "text";
   const optionsText = fieldData.options || "";
@@ -662,7 +666,7 @@ function renderDynamicFieldNew(fieldsContainer, fieldData = {}) {
 
 function renderDynamicField(fieldsContainer, fieldData = null) {
   const fieldHtml = document.createElement('div');
-  fieldHtml.className = 'field-entry mb-2 animate__animated animate__fadeIn';
+  fieldHtml.className = 'field-entry mb-2 animate__animated animate__fadeInUp';
   fieldHtml.innerHTML = `
     <input type="text" placeholder="Field Label" class="field-label-input bg-gray-600 p-2 rounded mr-2" value="${fieldData ? fieldData.label : ''}">
     <select class="field-type bg-gray-600 p-2 rounded mr-2">
@@ -843,7 +847,7 @@ function renderLogEntries(filteredLogs = logs) {
   logEntriesDiv.innerHTML = '';
   filteredLogs.forEach((log, index) => {
     const card = document.createElement('div');
-    card.className = 'log-entry-card bg-gray-800 border border-gray-700 rounded-2xl p-6 mb-6 shadow-md transition transform hover:-translate-y-1 hover:shadow-lg animate__animated animate__fadeIn';
+    card.className = 'log-entry-card bg-gray-800 border border-gray-700 rounded-2xl p-6 mb-6 shadow-md transition transform hover:-translate-y-1 hover:shadow-lg animate__animated animate__fadeInUp';
     
     // Header with modern date icon
     const header = document.createElement('div');
