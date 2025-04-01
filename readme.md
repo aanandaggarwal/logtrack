@@ -67,7 +67,14 @@ LogTrack is a personal web application I built to help me stay organized and tra
 
 ## Changelog
 
-📄 [View Full Changelog](./CHANGELOG.md)
+📄 [View Full Changelog](./changelog.md)
+
+**Latest Update ([v0.2.0-alpha](./changelog.md)):**
+- Major UI enhancements, optimized mobile responsiveness.
+- New Privacy Policy and Terms of Service pages added.
+- Fonts folder included for local Century Gothic hosting.
+- Various bug fixes (including emoji duplication fix).
+
 
 ---
 

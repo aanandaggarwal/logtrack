@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
+## [0.2.0-alpha] - 2025-04-01
+
+### Added
+- Comprehensive Terms of Service (`terms.html`) and Privacy Policy (`privacy.html`) pages:
+    - Interactive and responsive design with clear, readable typography.
+    - Animations: Title fade-in and content fade-in-up for immersive user experience.
+    - Back and Home navigation buttons with intuitive icons.
+- "fonts" folder added for local hosting of "Century Gothic" font files (woff2, woff).
+- Footer with subtle links to Terms, Privacy, and Developer Contact (mailto).
+- `getDisplayValue()` helper function to manage emojis without duplication for prefilled log entries.
+
+### Changed
+- **Major UI/UX Refinements:**
+    - Unified consistent font usage (Century Gothic, Inter, monospace).
+    - Optimized mobile responsiveness, especially for login/signup pages and header/footer areas.
+    - Footer aligned to header's dark-gray design, links underline smoothly in purple on hover.
+    - Button and icon sizing standardized across desktop and mobile for superior usability.
+    - New log entry and template builder forms spacing and alignment improved drastically.
+    - "Add Field" and "Delete" icons/buttons fully aligned and optimized on all devices.
+- Enhanced animation experience:
+    - Smooth fading animations when opening/closing forms.
+    - Page load animations refined for privacy and terms pages, ensuring cohesive visual flow.
+
+### Fixed
+- Autoscroll issues causing layout shifts resolved by modifying scroll behavior on load.
+- Duplicate emojis in prefilled and rendered logs completely resolved.
+- UI alignment issues for newly added dynamic fields fixed.
+- Unwanted blank vertical space below footer on Terms and Privacy pages corrected.
+
+### Removed
+- Unnecessary instant autoscroll behavior that disrupted visual harmony during page transitions.
+
+### Known Issues
+- Next steps needed in data storage/security.
+- Further testing and optimization required (especially device-specific).
+- Advanced search, filters, analytics, visualizations remain pending implementation.
+
+---
+
 ## [0.1.0-alpha] - 2025-03-31
 ### Added
 - Initial release of LogTrack web application

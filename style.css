@@ -6,8 +6,8 @@ html {
 @font-face {
   font-family: 'Century Gothic';
   src: url('/fonts/century-gothic.woff2') format('woff2'),
-       url('/fonts/century-gothic.woff') format('woff');
-  font-weight: normal;
+      url('/fonts/century-gothic.woff') format('woff');
+  font-weight: normal, bold, bolder;
   font-style: normal;
 }
 
@@ -22,20 +22,54 @@ body {
 }
 
 /* Backgrounds & Borders */
-.bg-gray-900 { background-color: #1c1c1c; }
-.text-gray-200 { color: #ffffff; }
-.border-gray-800 { border-color: #000000; }
-.bg-gray-800 { background-color: #2e2e2e; }
+.bg-gray-900 {
+  background-color: #1c1c1c;
+}
+
+.text-gray-200 {
+  color: #ffffff;
+}
+
+.border-gray-800 {
+  border-color: #000000;
+}
+
+.bg-gray-800 {
+  background-color: #2e2e2e;
+}
 
 /* Accent Colors */
-.bg-purple-600 { background-color: #8b5cf6; }
-.hover\:bg-purple-700:hover { background-color: #7c3aed; }
-.text-purple-400 { color: #8b5cf6; }
-.bg-blue-600 { background-color: #3b82f6; }
-.hover\:bg-blue-700:hover { background-color: #2563eb; }
-.bg-green-600 { background-color: #22c55e; }
-.hover\:bg-green-700:hover { background-color: #16a34a; }
-.text-red-500 { color: #f87171; }
+.bg-purple-600 {
+  background-color: #8b5cf6;
+}
+
+.hover\:bg-purple-700:hover {
+  background-color: #7c3aed;
+}
+
+.text-purple-400 {
+  color: #8b5cf6;
+}
+
+.bg-blue-600 {
+  background-color: #3b82f6;
+}
+
+.hover\:bg-blue-700:hover {
+  background-color: #2563eb;
+}
+
+.bg-green-600 {
+  background-color: #22c55e;
+}
+
+.hover\:bg-green-700:hover {
+  background-color: #16a34a;
+}
+
+.text-red-500 {
+  color: #f87171;
+}
 
 /* Form & Input Styles */
 input,
@@ -53,22 +87,37 @@ select {
 }
 
 /* Custom Drag Handle */
-.handle-track i { cursor: grab; }
+.handle-track i {
+  cursor: grab;
+}
 
 /* Animations */
-.fade-in { animation: fadeIn 0.5s ease-in-out; }
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+      opacity: 0;
+      transform: translateY(10px);
+  }
+
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
 }
 
 /* Buttons */
-button { 
-  transition: background-color 0.2s ease, transform 0.2s ease; 
+button {
+  transition: background-color 0.2s ease, transform 0.2s ease;
   border: none;
   cursor: pointer;
 }
-button:hover { transform: scale(1.02); }
+
+button:hover {
+  transform: scale(1.02);
+}
 
 /* Card and Form Containers */
 .track-container,
@@ -89,6 +138,7 @@ button:hover { transform: scale(1.02); }
   border: 1px solid #444;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
 .log-entry-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
@@ -103,6 +153,7 @@ button:hover { transform: scale(1.02); }
   width: 100vw;
   height: 100vh;
 }
+
 #loadingScreen {
   display: flex;
   align-items: center;
@@ -122,261 +173,319 @@ button:hover { transform: scale(1.02); }
   border-radius: 0.5rem;
   transition: background-color 0.2s ease, transform 0.2s ease;
   gap: 0.5rem;
+  font-family: monospace;
 }
-.header-btn:hover { transform: scale(1.03); }
+
+.header-btn:hover {
+  transform: scale(1.03);
+}
 
 /* Enhanced Animations */
-.animate__animated { animation-duration: 0.6s; }
+.animate__animated {
+  animation-duration: 0.6s;
+}
 
 /* Pulsating Icon */
-.fa-spin { animation: spin 2s infinite linear; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.fa-spin {
+  animation: spin 2s infinite linear;
+}
+
+@keyframes spin {
+  0% {
+      transform: rotate(0deg);
+  }
+
+  100% {
+      transform: rotate(360deg);
+  }
+}
 
 /* Fade Out Animation */
 .animate__fadeOut {
   animation: fadeOutDownSmooth 0.3s ease both !important;
 }
+
 @keyframes fadeOutDownSmooth {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(20px); }
+  0% {
+      opacity: 1;
+      transform: translateY(0);
+  }
+
+  100% {
+      opacity: 0;
+      transform: translateY(20px);
+  }
 }
 
 /* Bounce Animation for Feedback Icon */
-#feedbackModal i { animation: bounceIn 0.6s ease both; }
+#feedbackModal i {
+  animation: bounceIn 0.6s ease both;
+}
+
 @keyframes bounceIn {
-  0% { transform: scale(0.7); opacity: 0; }
-  60% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); }
+  0% {
+      transform: scale(0.7);
+      opacity: 0;
+  }
+
+  60% {
+      transform: scale(1.1);
+      opacity: 1;
+  }
+
+  100% {
+      transform: scale(1);
+  }
 }
 
 /* Mobile Responsiveness */
 /* General adjustments for mobile devices */
 @media (max-width: 640px) {
   main {
-    padding: 1rem;
+      padding: 1rem;
   }
+
   .log-entry-card {
-    padding: 1rem;
-    margin-bottom: 1rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
   }
+
   /* Make buttons larger and inputs more spaced out */
   button {
-    padding: 0.75rem;
-    font-size: 0.9rem;
+      padding: 0.75rem;
+      font-size: 0.9rem;
   }
-  input, textarea, select {
-    padding: 0.75rem;
-    font-size: 1rem;
+
+  input,
+  textarea,
+  select {
+      padding: 0.75rem;
+      font-size: 1rem;
   }
 }
 
 /* Enhanced Template Builder Mobile Styles */
 @media (max-width: 768px) {
   #templateBuilder {
-    padding: 1rem;
+      padding: 1rem;
   }
+
   #templateBuilder .track-container {
-    margin: 0.5rem 0;
-    padding: 1rem;
+      margin: 0.5rem 0;
+      padding: 1rem;
   }
+
   #templateBuilder .track-container .handle-track {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
   }
+
   #templateBuilder .track-container .handle-track input {
-    margin-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
   }
+
   #templateBuilder .track-container .units-container {
-    margin-top: 1rem;
+      margin-top: 1rem;
   }
+
   #templateBuilder .track-container .units-container .unit-container {
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border-width: 1px;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-width: 1px;
   }
-  #templateBuilder .track-container .units-container .unit-container > div.flex {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
+
+  #templateBuilder .track-container .units-container .unit-container>div.flex {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
   }
+
   #templateBuilder .track-container .units-container .unit-container input,
   #templateBuilder .track-container .units-container .unit-container select {
-    margin-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
   }
+
   #templateBuilder .track-container .units-container .unit-container button {
-    align-self: flex-end;
+      align-self: flex-end;
   }
 }
 
 /* New Log Entry/Edit Form Mobile Styles */
 @media (max-width: 640px) {
   #logEntryForm {
-    padding: 1rem;
-    margin: 0.5rem;
+      padding: 1rem;
+      margin: 0.5rem;
   }
-  #logEntryForm form > div {
-    margin-bottom: 0.75rem;
+
+  #logEntryForm form>div {
+      margin-bottom: 0.75rem;
   }
 }
 
 /* Log Display Cards Mobile Adjustments */
 @media (max-width: 640px) {
   .log-entry-card {
-    padding: 1rem;
-    margin: 0.75rem 0;
+      padding: 1rem;
+      margin: 0.75rem 0;
   }
+
   .log-entry-card h3,
   .log-entry-card p,
   .log-entry-card h4 {
-    font-size: 1rem;
+      font-size: 1rem;
   }
 }
 
 /* -- Enhance Dynamic Field Stacking on Mobile -- */
 @media (max-width: 640px) {
+
   /* Ensure that each dynamic field entry stacks vertically */
   .field-entry {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: stretch;
   }
+
   /* Stack the input for field label, select and options vertically */
   .field-entry input.field-label-input,
   .field-entry select.field-type,
   .field-entry input.field-options,
   .field-entry .field-input {
-    width: 100%;
-    margin: 0;
+      width: 100%;
+      margin: 0;
   }
+
   /* In case the container was set as row on larger screens, force column */
   .field-container {
-    flex-direction: column !important;
-    gap: 0.5rem;
+      flex-direction: column !important;
+      gap: 0.5rem;
   }
-  
+
   /* For Template Builder unit containers */
   #templateBuilder .unit-container {
-    padding: 0.75rem !important;
-    margin-bottom: 1rem !important;
+      padding: 0.75rem !important;
+      margin-bottom: 1rem !important;
   }
-  
+
   /* For new log entry dynamic fields container adjustments */
-  #logEntryForm form > div {
-    margin-bottom: 0.75rem;
+  #logEntryForm form>div {
+      margin-bottom: 0.75rem;
   }
-  
+
   /* Ensure select option box (for dynamic "select" fields) looks clean */
   .field-options {
-    padding: 0.5rem;
-    border-radius: 0.3rem;
-    border: 1px solid #444;
-    background-color: #333;
+      padding: 0.5rem;
+      border-radius: 0.3rem;
+      border: 1px solid #444;
+      background-color: #333;
   }
 }
 
 @media (max-width: 640px) {
+
   /* --- Header Adjustments --- */
   header {
-    flex-direction: column;
-    align-items: center;
-    padding: 0.25rem;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.25rem;
   }
-  
+
   /* Hide any text labels so only icons show */
   .logtrack-label,
   .btn-label {
-    display: none;
+      display: none;
   }
-  
+
   /* Logo: center with small margin below */
   #logo {
-    margin-bottom: 0.25rem;
+      margin-bottom: 0.25rem;
   }
-  
+
   /* Header button container: horizontal row with reduced gap */
-  header > div.flex {
-    flex-direction: row;
-    justify-content: center;
-    gap: 0.5rem;
-    width: auto;
+  header>div.flex {
+      flex-direction: row;
+      justify-content: center;
+      gap: 0.5rem;
+      width: auto;
   }
-  
+
   /* Header buttons: smaller, reduced padding, and smaller font */
   .header-btn {
-    padding: 0.75rem 2rem;
-    border-radius: 0.5rem;
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
   }
-  
+
   /* --- Template Builder & New Log Entry Adjustments --- */
   /* Ensure track names and icons have proper spacing */
   #templateBuilder,
   #logEntryForm {
-    padding: 0.75rem;
-    margin: 0.5rem;
+      padding: 0.75rem;
+      margin: 0.5rem;
   }
-  
+
   /* Track containers in Template Builder */
   #templateBuilder .track-container {
-    margin: 0.5rem 0;
-    padding: 0.75rem;
+      margin: 0.5rem 0;
+      padding: 0.75rem;
   }
-  
+
   /* For the track header (track name, icon, and delete button) */
   #templateBuilder .track-container .handle-track {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
   }
-  
+
   /* Adjust inputs inside Template Builder to use full width */
   #templateBuilder input {
-    padding: 0.5rem;
-    font-size: 0.9rem;
+      padding: 0.5rem;
+      font-size: 0.9rem;
   }
-  
+
   /* Unit containers in Template Builder */
   #templateBuilder .unit-container {
-    padding: 0.5rem;
-    margin-bottom: 0.75rem;
+      padding: 0.5rem;
+      margin-bottom: 0.75rem;
   }
-  
+
   /* New Log Entry form: reduce gaps between fields */
-  #logEntryForm form > div {
-    margin-bottom: 0.5rem;
+  #logEntryForm form>div {
+      margin-bottom: 0.5rem;
   }
-  
+
   /* Ensure dynamic field entries stack properly on mobile */
   .field-entry {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: stretch;
   }
+
   .field-entry input.field-label-input,
   .field-entry select.field-type,
   .field-entry input.field-options,
   .field-entry .field-input {
-    width: 100%;
-    margin: 0;
+      width: 100%;
+      margin: 0;
   }
-  
+
   /* Optional: Reduce icon sizes in dynamic fields */
   .field-entry .prefilled-field-type,
   .field-entry .prefilled-field-label {
-    font-size: 0.85rem;
+      font-size: 0.85rem;
   }
 }
 
 /* Mobile adjustments for authentication forms */
 @media (max-width: 640px) {
   #authForms {
-    padding: 0 1rem;
+      padding: 0 1rem;
   }
 }
 
@@ -385,7 +494,8 @@ button:hover { transform: scale(1.02); }
   display: block;
   width: 90%;
   max-width: 600px;
-  margin: 0 auto; /* Centers the element horizontally */
+  margin: 0 auto;
+  /* Centers the element horizontally */
   box-sizing: border-box;
 }
 
@@ -399,4 +509,52 @@ button:hover { transform: scale(1.02); }
 /* Ensure consistent button styling in Template Builder */
 #templateBuilder button {
   transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+/* Default delete button styling */
+.delete-track,
+.delete-unit,
+.delete-field,
+.delete-track-button,
+.delete-unit-button,
+.delete-field-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  margin-left: 0.5rem;
+  min-width: 2rem;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+/* Hover effect for delete buttons */
+.delete-track:hover,
+.delete-unit:hover,
+.delete-field:hover,
+.delete-track-button:hover,
+.delete-unit-button:hover,
+.delete-field-button:hover {
+  transform: scale(1.1);
+  background-color: rgba(248, 113, 113, 0.2);
+  /* subtle light red background */
+}
+
+/* For field entries: on desktop, align elements in one row */
+@media (min-width: 641px) {
+  .field-entry {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+  }
+}
+
+/* For field entries on mobile: stack elements vertically */
+@media (max-width: 640px) {
+  .field-entry {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: stretch;
+  }
 }
