@@ -1,6 +1,7 @@
 /* Global animation smoothing */
 html {
   scroll-behavior: smooth;
+  background-color: #1c1c1c;
 }
 
 @font-face {
@@ -13,6 +14,7 @@ html {
 
 /* Base Styles */
 body {
+  padding-top: env(safe-area-inset-top); /* Adds padding so content isn’t hidden */
   font-family: 'Inter', sans-serif;
   user-select: none;
   background: linear-gradient(135deg, #1c1c1c 0%, #121212 100%);
