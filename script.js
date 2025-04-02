@@ -114,12 +114,46 @@ document.getElementById('signupButton').addEventListener('click', async () => {
     }
 });
 document.getElementById('showSignup').addEventListener('click', () => {
-    document.getElementById('loginForm').classList.add('hidden');
-    document.getElementById('signupForm').classList.remove('hidden');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+
+    loginForm.style.setProperty('--animate-duration', '0.5s');
+    signupForm.style.setProperty('--animate-duration', '0.5s');
+
+    loginForm.classList.add('animate__animated', 'animate__fadeOut');
+    loginForm.addEventListener('animationend', function onLoginFadeOut() {
+        loginForm.classList.add('hidden');
+        loginForm.classList.remove('animate__animated', 'animate__fadeOut');
+        loginForm.removeEventListener('animationend', onLoginFadeOut);
+
+        signupForm.classList.remove('hidden');
+        signupForm.classList.add('animate__animated', 'animate__fadeIn');
+        signupForm.addEventListener('animationend', function onSignupFadeIn() {
+            signupForm.classList.remove('animate__animated', 'animate__fadeIn');
+            signupForm.removeEventListener('animationend', onSignupFadeIn);
+        });
+    });
 });
 document.getElementById('showLogin').addEventListener('click', () => {
-    document.getElementById('signupForm').classList.add('hidden');
-    document.getElementById('loginForm').classList.remove('hidden');
+    const signupForm = document.getElementById('signupForm');
+    const loginForm = document.getElementById('loginForm');
+
+    signupForm.style.setProperty('--animate-duration', '0.5s');
+    loginForm.style.setProperty('--animate-duration', '0.5s');
+
+    signupForm.classList.add('animate__animated', 'animate__fadeOut');
+    signupForm.addEventListener('animationend', function onSignupFadeOut() {
+        signupForm.classList.add('hidden');
+        signupForm.classList.remove('animate__animated', 'animate__fadeOut');
+        signupForm.removeEventListener('animationend', onSignupFadeOut);
+
+        loginForm.classList.remove('hidden');
+        loginForm.classList.add('animate__animated', 'animate__fadeIn');
+        loginForm.addEventListener('animationend', function onLoginFadeIn() {
+            loginForm.classList.remove('animate__animated', 'animate__fadeIn');
+            loginForm.removeEventListener('animationend', onLoginFadeIn);
+        });
+    });
 });
 document.getElementById('logoutButton').addEventListener('click', async () => {
     const logoutModal = document.getElementById('logoutModal');

@@ -609,3 +609,9 @@ button:hover {
     animation: subtleTechGradient 20s ease infinite;
   }
 
+/* Scrollbar Styling (Optional, for aesthetics) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(31, 41, 55, 0.5); border-radius: 4px; } /* gray-800/50 */
+::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 4px; } /* gray-600 */
+::-webkit-scrollbar-thumb:hover { background: #6B7280; } /* gray-500 */
+
