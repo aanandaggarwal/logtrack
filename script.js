@@ -136,7 +136,7 @@ document.getElementById('googleSignInButton')?.addEventListener('click', async (
     } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: 'https://aanandaggarwal.github.io/logtrack/'
+            redirectTo: window.location.origin
         }
     });
     if (error) alert(error.message);
