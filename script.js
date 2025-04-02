@@ -125,10 +125,14 @@ document.getElementById('logoutButton').addEventListener('click', async () => {
     const logoutModal = document.getElementById('logoutModal');
     logoutModal.classList.remove('hidden');
     await new Promise(resolve => setTimeout(resolve, 800));
-    await supabaseClient.auth.signOut();
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error.message);
+      alert("Logout failed: " + error.message);
+    }
     logoutModal.classList.add('hidden');
     checkAuth();
-});
+  });
 document.getElementById('googleSignInButton')?.addEventListener('click', async () => {
     sessionStorage.setItem('redirectLogin', true);
     const {
