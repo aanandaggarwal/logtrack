@@ -245,6 +245,7 @@ button:hover {
 @media (max-width: 640px) {
   main {
       padding: 1rem;
+      -webkit-overflow-scrolling: touch;
   }
 
   .log-entry-card {
@@ -323,6 +324,13 @@ button:hover {
   #logEntryForm form>div {
       margin-bottom: 0.75rem;
   }
+    /* Ensure proper scrolling on mobile for log entry and template builder modals */
+#logEntryForm,
+#templateBuilder {
+  max-height: calc(100vh - 80px); /* Adjust the 80px offset as needed based on your header/footer sizes */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Enables native momentum scrolling on iOS */
+}
 }
 
 /* Log Display Cards Mobile Adjustments */
@@ -600,3 +608,4 @@ button:hover {
     background-size: 300% 300%;
     animation: subtleTechGradient 20s ease infinite;
   }
+
