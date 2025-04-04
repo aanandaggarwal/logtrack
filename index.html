@@ -21,6 +21,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
     <!-- SortableJS for drag-and-drop -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.0/docx.umd.min.js"></script>
 </head>
 
 <body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col relative">
@@ -70,7 +72,7 @@
         <header class="sticky top-0 z-40 bg-gray-900 border-b border-gray-800 px-4 py-3 flex flex-wrap justify-between sm:justify-between items-center shadow-md">
             <!-- Clickable Logo returns to default view -->
             <a id="logo" href="#" class="flex items-center">
-                <h1 class="text-2xl font-extrabold text-purple-400 flex items-center justify-center space-x-2" style="font-family: 'Century Gothic', sans-serif;">
+                <h1 class="text-2xl font-extrabold text-purple-400 hover:text-purple-600 flex items-center justify-center space-x-2" style="font-family: 'Century Gothic', sans-serif;">
                     <i class="fas fa-tasks text-2xl"></i>
                     <span class="logtrack-label hidden sm:inline">LogTrack</span>
                 </h1>
@@ -84,14 +86,17 @@
                     <i class="fas fa-file-export"></i>
                     <span class="btn-label">Export</span>
                 </button>
-                <button id="templateButton" class="header-btn bg-gray-800 hover:bg-gray-700" title="Edit Template">
-                    <i class="fas fa-cog"></i>
+                <button id="templateButton" class="header-btn bg-green-600 hover:bg-green-700" title="Edit Template">
+                    <i class="fas fa-layer-group"></i>
                     <span class="btn-label">Template</span>
                 </button>
                 <button id="logoutButton" class="header-btn bg-red-600 hover:bg-red-700" title="Log Out">
                     <i class="fas fa-sign-out-alt"></i>
                     <span class="btn-label">Logout</span>
                 </button>
+                <button id="settingsButton" class="header-btn w-9 h-9 flex items-center justify-center bg-gray-600 hover:bg-gray-500" title="Settings">
+                    <i class="fas fa-cog text-xl"></i>
+                </button>                                             
             </div>
         </header>
 
@@ -112,15 +117,13 @@
                 <p class="font-semibold text-gray-300">Enjoy tracking your progress with LogTrack!</p>
             </div>
             <!-- Template Builder -->
-            <!-- Template Builder -->
-            <div id="templateBuilder" class="hidden bg-gray-800 rounded p-6 mb-8 sm:mb-10 animate__animated animate__fadeIn font-mono">
+            <div id="viewContainer">
+            <div id="templateBuilder" class="hidden bg-gray-800 rounded p-6 mt-0 mb-8 sm:mb-10 animate__animated animate__fadeIn font-mono">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-purple-400 flex items-center">
-                        <i class="fas fa-cog mr-2"></i> Template Builder
-                    </h2>
-                    <button id="closeTemplateBuilder" class="text-gray-400 hover:text-red-500">
-                        <i class="fas fa-times"></i>
-                    </button>
+                        <h2 class="text-xl font-semibold text-purple-400">🛠️ Template Builder</h2>
+                        <button id="closeTemplateBuilder" class="text-gray-400 hover:text-red-500">
+                          <i class="fas fa-times"></i>
+                        </button>
                 </div>
                 <!-- Draggable area for template tracks -->
                 <div id="templateTracks" class="mb-4 space-y-4"></div>
@@ -133,15 +136,16 @@
                     </button>
                 </div>
             </div>
-
-
-            <!-- New / Edit Log Entry Form -->
-            <div id="logEntryForm" class="hidden bg-gray-800 rounded p-6 mb-8 sm:mb-10 animate__animated animate__fadeIn font-mono">
-                <!-- Dynamically generated log entry form -->
             </div>
 
+            <!-- New / Edit Log Entry Form -->
+            <div id="viewContainer">
+            <div id="logEntryForm" class="hidden bg-gray-800 rounded p-6 mb-8 sm:mb-10 animate__animated animate__fadeIn font-mono">
+                <!-- Dynamically generated log entry form -->
+                </div>
+            </div>
             <!-- Search Bar: Always at the top with proper spacing -->
-            <div class="mb-6 px-2">
+            <div class="mt-1 mb-6 px-2">
                 <input type="text" id="searchBar" class="bg-gray-700 text-white p-3 rounded w-full font-mono" placeholder="🔍 Search logs..." />
             </div>
 
@@ -154,7 +158,7 @@
             <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
                 <div class="bg-gray-800 rounded-xl shadow-xl p-8 flex flex-col items-center animate__animated animate__fadeIn">
                     <i class="fas fa-spinner fa-spin text-5xl text-purple-400 mb-4"></i>
-                    <p class="text-lg font-semibold text-gray-200">Signing you out...</p>
+                    <p class="text-lg text-center font-semibold text-gray-200">Signing you out...</p>
                 </div>
             </div>
 
@@ -162,7 +166,7 @@
             <div id="feedbackModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
                 <div class="bg-gray-800 rounded-xl shadow-xl p-8 flex flex-col items-center animate__animated animate__fadeIn">
                     <i id="feedbackIcon" class="fas fa-check-circle text-5xl text-green-400 mb-4"></i>
-                    <p id="feedbackMessage" class="text-lg font-semibold text-gray-200"></p>
+                    <p id="feedbackMessage" class="text-lg text-center font-semibold text-gray-200"></p>
                 </div>
             </div>
 
@@ -170,7 +174,7 @@
             <div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
                 <div class="bg-gray-800 rounded-xl shadow-xl p-8 flex flex-col items-center animate__animated animate__fadeIn">
                     <i class="fas fa-exclamation-circle text-5xl text-red-400 mb-4"></i>
-                    <p class="text-lg font-semibold text-gray-200 mb-6">Are you sure you want to delete this log entry?</p>
+                    <p class="text-lg font-semibold text-center text-gray-200 mb-6">Are you sure you want to delete this log entry?</p>
                     <div class="flex space-x-4">
                         <button id="confirmDeleteBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded font-semibold">Delete</button>
                         <button id="cancelDeleteBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded font-semibold">Cancel</button>
@@ -178,16 +182,90 @@
                 </div>
             </div>
 
+<!-- Discard Changes Confirmation Modal -->
+<div id="discardChangesModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-gray-800 rounded-xl shadow-xl p-8 flex flex-col items-center animate__animated animate__fadeIn w-full max-w-sm">
+      <i class="fas fa-exclamation-triangle text-5xl text-red-400 mb-4"></i>
+      <p class="text-lg text-center font-semibold text-gray-200 mb-6">Discard unsaved changes?</p>
+      <div class="flex space-x-4">
+        <button id="confirmDiscardBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded font-semibold">Discard</button>
+        <button id="cancelDiscardBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold">Keep Editing</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Structure Confirmation Modal -->
+<div id="structureConfirmModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-gray-800 rounded-xl shadow-xl p-8 flex flex-col items-center animate__animated animate__fadeIn w-full max-w-sm">
+      <i class="fas fa-exclamation-circle text-5xl text-yellow-400 mb-4"></i>
+      <p class="text-lg text-center font-semibold text-gray-200 mb-6">
+        Your daily log structure differs from the current template.
+        Update template with the new structure?
+      </p>
+      <div class="flex space-x-4">
+        <button id="confirmStructureBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded font-semibold">
+          Update
+        </button>
+        <button id="cancelStructureBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold">
+          Keep Existing
+        </button>
+      </div>
+    </div>
+  </div>
+  
+
             <!-- Export Modal -->
             <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
                 <div class="bg-gray-800 rounded-xl shadow-xl p-8 flex flex-col items-center animate__animated animate__fadeIn">
                     <i class="fas fa-file-export text-5xl text-purple-400 mb-4"></i>
-                    <p class="text-lg font-semibold text-gray-200">Exporting your logs...</p>
+                    <p class="text-lg font-semibold text-gray-200 text-center">Exporting your logs...</p>
                 </div>
             </div>
 
         </main>
     </div>
+<!-- Settings Modal -->
+<div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+  <div class="bg-gray-800 rounded-xl shadow-xl p-8 font-mono animate__animated animate__fadeIn w-full max-w-sm modal-content">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold text-purple-400">Settings</h2>
+      <button id="closeSettings" class="text-gray-400 hover:text-red-500">
+         <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mb-4">
+      <p class="text-gray-300">Email: <span id="userEmail">user@example.com</span></p>
+    </div>
+    <div class="flex flex-col space-y-3">
+      <button id="changeEmailButton" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center">
+        <i class="fas fa-envelope mr-2"></i>Change Email
+      </button>
+      <button id="resetPasswordButton" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded flex items-center">
+        <i class="fas fa-key mr-2"></i>Reset Password
+      </button>
+    </div>
+    <div class="export-section mt-6 border-t border-gray-700 pt-4">
+      <h3 class="text-lg font-semibold text-purple-400 mb-2">Export Logs</h3>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-2 sm:space-y-0">
+        <select id="exportFormatSelect" class="bg-gray-700 text-gray-200 p-2 rounded w-full sm:w-auto">
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+          <option value="txt">Plain Text</option>
+          <option value="md">Markdown</option>
+          <option value="pdf">PDF</option>
+          <option value="docx">DOCX</option>
+        </select>
+        <button id="previewExportButton" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded flex items-center">
+          <i class="fas fa-eye mr-2"></i>Preview Export
+        </button>
+        <button id="saveSettingsButton" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded flex items-center">
+          <i class="fas fa-save mr-2"></i>Save Settings
+        </button>
+      </div>
+      <div id="exportPreview" class="mt-2 p-2 bg-gray-700 rounded text-sm font-mono max-h-60 overflow-y-auto hidden"></div>
+    </div>
+  </div>
+</div>
 
     <footer class="bg-gray-900 text-white p-4 pb-6">
         <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-mono">

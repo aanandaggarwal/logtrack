@@ -5,9 +5,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /***** App Data *****/
 let template = []; // Loaded from Template Builder (or saved in cloud)
+let originalTemplateSnapshot = []; // Used to detect unsaved changes
 let logs = []; // Array of log entry objects
 let cloudDocId = null; // Single row ID in Supabase
 let currentUserId = null;
+
+
 
 /***** Feedback & Confirm Helpers *****/
 function showFeedback(message, type = 'success', duration = 1500) {
@@ -29,6 +32,15 @@ function showFeedback(message, type = 'success', duration = 1500) {
     feedbackModal.classList.remove('hidden');
     setTimeout(() => feedbackModal.classList.add('hidden'), duration);
 }
+
+function closeAllPopups() {
+    const ids = ['settingsModal', 'logEntryForm', 'templateBuilder', 'logoutModal', 'exportModal'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    });
+  }
+  
 
 function confirmLogDeletion(logIndex) {
     const deleteConfirmModal = document.getElementById('deleteConfirmModal');
@@ -52,6 +64,151 @@ function performLogDeletion(logIndex) {
     renderLogEntries();
     showFeedback('Log Deleted Successfully!', 'deleted');
 }
+
+// Global variable to store the selected export format (default is "json")
+let selectedExportFormat = "json";
+
+// Export logs as CSV
+function exportLogsAsCSV(logs) {
+  let csv = "Date,Daily Notes,Tracks\n";
+  logs.forEach(log => {
+    const date = `"${log.date}"`;
+    const notes = `"${log.dailyNotes.replace(/"/g, '""')}"`;
+    const tracks = `"${JSON.stringify(log.tracks).replace(/"/g, '""')}"`;
+    csv += `${date},${notes},${tracks}\n`;
+  });
+  return csv;
+}
+
+// Export logs as plain text
+function exportLogsAsTXT(logs) {
+  let txt = "";
+  logs.forEach(log => {
+    txt += `Date: ${log.date}\n`;
+    txt += `Notes: ${log.dailyNotes}\n`;
+    log.tracks.forEach((track, tIndex) => {
+      txt += `  Track ${tIndex+1}: ${track.label}\n`;
+      track.units.forEach((unit, uIndex) => {
+        txt += `    Unit ${uIndex+1}: ${unit.label}\n`;
+        unit.fields.forEach(field => {
+          txt += `      ${field.label}: ${field.value}\n`;
+        });
+      });
+    });
+    txt += "\n";
+  });
+  return txt;
+}
+
+// Export logs as Markdown
+function exportLogsAsMD(logs) {
+  let md = "# LogTrack Export\n\n";
+  logs.forEach((log, i) => {
+    md += `## Log ${i + 1}: ${log.date}\n\n`;
+    md += `**Daily Notes:** ${log.dailyNotes}\n\n`;
+    log.tracks.forEach((track, tIndex) => {
+      md += `### Track ${tIndex + 1}: ${track.label}\n\n`;
+      track.units.forEach((unit, uIndex) => {
+        md += `- **Unit ${uIndex + 1}:** ${unit.label}\n`;
+        unit.fields.forEach(field => {
+          md += `  - **${field.label}:** ${field.value}\n`;
+        });
+        md += "\n";
+      });
+      md += "\n";
+    });
+    md += "\n---\n\n";
+  });
+  // Remove common emoji characters that might not render in PDF/DOCX
+  md = md.replace(/(📆|🔢|☑️|📌|🗓️|💬|🔽|✅|❌)/g, "");
+  return md;
+}
+
+// Improved PDF export using jsPDF (adds margins and removes problematic emojis)
+async function exportLogsAsPDF(logs) {
+  const mdContent = exportLogsAsMD(logs);
+  const { jsPDF } = window.jspdf;
+  const pdfDoc = new jsPDF();
+  const margin = 10;
+  const pageWidth = pdfDoc.internal.pageSize.getWidth();
+  const lines = pdfDoc.splitTextToSize(mdContent, pageWidth - margin * 2);
+  pdfDoc.text(lines, margin, margin);
+  return pdfDoc.output("blob");
+}
+
+// Export logs as DOCX using the docx library
+async function exportLogsAsDOCX(logs) {
+  const { Document, Packer, Paragraph, HeadingLevel } = window.docx;
+  const paragraphs = logs.flatMap((log, i) => {
+    const children = [];
+    children.push(new Paragraph({ text: `Log ${i + 1}: ${log.date}`, heading: HeadingLevel.HEADING_2 }));
+    children.push(new Paragraph({ text: `Daily Notes: ${log.dailyNotes}` }));
+    log.tracks.forEach((track, tIndex) => {
+      children.push(new Paragraph({ text: `Track ${tIndex + 1}: ${track.label}`, heading: HeadingLevel.HEADING_3 }));
+      track.units.forEach((unit, uIndex) => {
+        children.push(new Paragraph({ text: `Unit ${uIndex + 1}: ${unit.label}`, bullet: { level: 0 } }));
+        unit.fields.forEach(field => {
+          children.push(new Paragraph({ text: `${field.label}: ${field.value}`, bullet: { level: 1 } }));
+        });
+      });
+    });
+    children.push(new Paragraph({ text: "" })); // Blank line between logs
+    return children;
+  });
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: paragraphs,
+    }]
+  });
+  const blob = await Packer.toBlob(doc);
+  return blob;
+}
+
+function updateExportPreview() {
+    let format = selectedExportFormat || "json";
+    let previewContent = "";
+    if (format === "json") {
+      previewContent = JSON.stringify({ template, logs }, null, 2);
+    } else if (format === "csv") {
+      previewContent = exportLogsAsCSV(logs);
+    } else if (format === "txt") {
+      previewContent = exportLogsAsTXT(logs);
+    } else if (format === "md") {
+      previewContent = exportLogsAsMD(logs);
+    } else if (format === "pdf" || format === "docx") {
+      // For PDF and DOCX, show a Markdown preview as an approximation
+      previewContent = exportLogsAsMD(logs);
+    }
+    if (previewContent.length > 500) {
+      previewContent = previewContent.substring(0, 500) + "\n... (truncated preview)";
+    }
+    const previewDiv = document.getElementById('exportPreview');
+    previewDiv.textContent = previewContent;
+    previewDiv.classList.remove('hidden');
+  } 
+
+  // New: Show the structure confirmation modal and return a promise that resolves to true if confirmed, false otherwise.
+function showStructureConfirmModal() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('structureConfirmModal');
+    const confirmBtn = document.getElementById('confirmStructureBtn');
+    const cancelBtn = document.getElementById('cancelStructureBtn');
+    
+    modal.classList.remove('hidden');
+
+    // Cleanup function to hide modal and clear event listeners
+    const cleanUp = () => {
+      modal.classList.add('hidden');
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+    };
+
+    confirmBtn.onclick = () => { cleanUp(); resolve(true); };
+    cancelBtn.onclick = () => { cleanUp(); resolve(false); };
+  });
+}
+
 
 /***** Auth State Management *****/
 async function checkAuth() {
@@ -362,7 +519,7 @@ function renderTemplateTracks() {
             });
             trackHtml += `
             </div>
-            <button class="add-field-button bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-mono" data-track-index="${tIndex}" data-unit-index="${uIndex}"> ✍️ Add Field</button>
+            <button class="add-field-button bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-mono" data-track-index="${tIndex}" data-unit-index="${uIndex}"> ✍️ Add Field</button>
           </div>`;
         });
         trackHtml += `
@@ -408,6 +565,9 @@ function initSortableTemplate() {
             animation: 150
         });
     });
+
+    originalTemplateSnapshot = JSON.parse(JSON.stringify(template));
+
 }
 
 /***** New / Edit Log Entry Form Functions *****/
@@ -487,86 +647,122 @@ function renderLogEntryForm(mode = 'new', logData = null) {
 function renderTracksForNew() {
     const container = document.getElementById('tracksContainer');
     container.innerHTML = '';
+    // Use both track and its index (tIndex) so we can reference the correct template unit
     const tracks = JSON.parse(JSON.stringify(template));
-    tracks.forEach(track => {
-        const trackHtml = document.createElement('div');
-        trackHtml.className = 'track-entry bg-gray-800 border border-gray-700 rounded-md p-4 mb-4 shadow-md animate__animated animate__fadeInUp';
-        trackHtml.innerHTML = `
-      <div class="flex justify-between items-center mb-2">
-        <div class="flex items-center">
-          <i class="fas fa-dumbbell text-purple-400 mr-2"></i>
-          <span class="font-semibold text-purple-300 text-lg prefilled-track-label">${track.label}</span>
+    tracks.forEach((track, tIndex) => {
+      const trackHtml = document.createElement('div');
+      trackHtml.className =
+        'track-entry bg-gray-800 border border-gray-700 rounded-md p-4 mb-4 shadow-md animate__animated animate__fadeInUp';
+      trackHtml.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex items-center">
+            <i class="fas fa-dumbbell text-purple-400 mr-2"></i>
+            <span class="font-semibold text-purple-300 text-lg prefilled-track-label">${track.label}</span>
+          </div>
+          <button type="button" class="delete-track text-red-500">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
-        <button type="button" class="delete-track text-red-500">
-          <i class="fas fa-trash"></i>
+        <div class="units-container space-y-4"></div>
+        <button type="button" class="add-unit-prefilled bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md mt-4 flex items-center">
+          <i class="fas fa-plus mr-1"></i> Add Unit
         </button>
-      </div>
-      <div class="units-container space-y-4"></div>
-      <button type="button" class="add-unit-prefilled bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md mt-4" data-original-unit='${JSON.stringify(track.units[0])}'>
-        <i class="fas fa-plus-circle mr-1"></i> Add Unit
-      </button>
-    `;
-trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
-    e.preventDefault();
-    trackHtml.classList.add('animate__fadeOut');
-    setTimeout(() => {
-        const previousSibling = trackHtml.previousElementSibling || trackHtml.parentElement;
-        trackHtml.remove();
-        previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-});
-        const unitsContainer = trackHtml.querySelector('.units-container');
-        track.units.forEach(unit => {
-            renderPrefilledUnitNew(unitsContainer, unit);
-        });
-        const addUnitBtn = trackHtml.querySelector('.add-unit-prefilled');
-        addUnitBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const originalUnitData = JSON.parse(addUnitBtn.getAttribute('data-original-unit'));
-            renderPrefilledUnitNew(unitsContainer, originalUnitData);
-            const newUnit = unitsContainer.lastElementChild;
-            if (newUnit) {
-                newUnit.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'end'
-                });
-            }
-        });
-        container.appendChild(trackHtml);
+      `;
+      // Delete track event listener (unchanged)
+      trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
+        e.preventDefault();
+        trackHtml.classList.add('animate__fadeOut');
+        setTimeout(() => {
+          const next = trackHtml.nextElementSibling;
+          const prev = trackHtml.previousElementSibling;
+          trackHtml.remove();
+          if (next) {
+            next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else if (prev) {
+            prev.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 300);
+      });
+      // Render prefilled units
+      const unitsContainer = trackHtml.querySelector('.units-container');
+      track.units.forEach((unit) => {
+        renderPrefilledUnitNew(unitsContainer, unit);
+      });
+      // Corrected "Add Unit" button event listener using tIndex
+      const addUnitBtn = trackHtml.querySelector('.add-unit-prefilled');
+      addUnitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Use the first unit from the matching template track as the model
+        let originalUnit =
+          template[tIndex] && template[tIndex].units.length > 0
+            ? template[tIndex].units[0]
+            : { label: "", fields: [] };
+        // Clone the unit to get a blank structure
+        let newUnitData = cloneUnit(originalUnit);
+        renderPrefilledUnitNew(unitsContainer, newUnitData);
+        const newUnit = unitsContainer.lastElementChild;
+        if (newUnit) {
+          newUnit.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      });
+      container.appendChild(trackHtml);
     });
-}
+  }   
 
-function renderPrefilledUnitNew(unitsContainer, unitData) {
+  function renderPrefilledUnitNew(unitsContainer, unitData) {
     const unitHtml = document.createElement('div');
     // Add a marker class "prefilled-unit" so we can later clone its structure.
-    unitHtml.className = 'unit-entry prefilled-unit bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeInUp relative';
+    unitHtml.className =
+      'unit-entry prefilled-unit bg-gray-700 p-3 rounded mb-3 animate__animated animate__fadeInUp relative';
     unitHtml.innerHTML = `
-    <div class="flex justify-between items-center mb-2">
-      <!-- The unit label is prefilled and readonly -->
-      <input type="text" value="${unitData.label}" class="unit-label bg-gray-600 text-white p-3 rounded font-mono text-lg flex-grow" readonly />
-      <button type="button" class="delete-unit-button text-red-500 hover:text-red-600">
-        <i class="fas fa-times-circle"></i>
+      <div class="flex justify-between items-center mb-2">
+        <!-- The unit label is prefilled and readonly -->
+        <input type="text" value="${unitData.label}" class="unit-label bg-gray-600 text-white p-3 rounded font-mono text-lg flex-grow" readonly />
+        <button type="button" class="delete-unit-button text-red-500 hover:text-red-600">
+          <i class="fas fa-times-circle"></i>
+        </button>
+      </div>
+      <div class="fields-container space-y-2"></div>
+      <!-- New inline Add Unit button for cloning this specific unit type -->
+      <button type="button" class="add-unit-from-this bg-green-600 hover:bg-blue-700 text-white px-2 py-1 rounded mt-2">
+        <i class="fa-solid fa-clone"></i> Clone
       </button>
-    </div>
-    <div class="fields-container space-y-2"></div>
-  `;
-    // Render each field as read-only (using new function)
+    `;
+    // Render each field as read-only
     const fieldsContainer = unitHtml.querySelector('.fields-container');
     unitData.fields.forEach(field => {
-        renderDynamicFieldNewReadOnly(fieldsContainer, field);
+      renderDynamicFieldNewReadOnly(fieldsContainer, field);
     });
     // Delete functionality for this unit
     unitHtml.querySelector('.delete-unit-button').addEventListener('click', (e) => {
-        e.preventDefault();
-        unitHtml.classList.add('animate__fadeOut');
-        setTimeout(() => {
-            const previousSibling = unitHtml.previousElementSibling || unitHtml.parentElement;
-            unitHtml.remove();
-            previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-    });    
+      e.preventDefault();
+      unitHtml.classList.add('animate__fadeOut');
+      setTimeout(() => {
+        const previousSibling = unitHtml.previousElementSibling || unitHtml.parentElement;
+        unitHtml.remove();
+        previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    });
+    // Add unit cloning functionality: clone the current unit’s structure
+    unitHtml.querySelector('.add-unit-from-this').addEventListener('click', (e) => {
+      e.preventDefault();
+      // Clone the current unit's structure (with empty values)
+      const newUnitData = cloneUnit(unitData);
+      // Insert the cloned unit after the current unit element
+      const newUnitHtml = document.createElement('div');
+      newUnitHtml.className = unitHtml.className;
+      newUnitHtml.innerHTML = unitHtml.innerHTML; // re-use inner HTML as a base
+      // Remove any duplicate event listeners by re-rendering the unit from the model
+      renderPrefilledUnitNew(unitsContainer, newUnitData);
+      // Scroll to the newly added unit
+      const lastUnit = unitsContainer.lastElementChild;
+      if (lastUnit) {
+        lastUnit.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    });
     unitsContainer.appendChild(unitHtml);
-}
+  }
+  
 
 // New function: Render a dynamic field for a prefilled unit as read-only.
 // It shows the field label (with an emoji based on type) and creates an input for the value.
@@ -660,7 +856,7 @@ function addDynamicTrack(container = null) {
     </div>
     <div class="units-container"></div>
     <button type="button" class="add-unit bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4">
-     <i class="fas fa-plus-circle mr-1"></i> Add Unit
+     <i class="fas fa-plus-circle mr-1"></i> Add Default Unit
     </button>
   `;
     const trackInput = trackHtml.querySelector('.track-label');
@@ -699,110 +895,129 @@ function addDynamicTrack(container = null) {
 }
 
 function renderDynamicUnit(unitsContainer, unitData) {
-    // Use the same classes as in your Template Builder for unit boxes
     const unitHtml = document.createElement('div');
     unitHtml.className = 'unit-entry bg-gray-700 border border-gray-600 rounded-md p-4 mb-4 space-y-4 animate__animated animate__fadeInUp relative';
     unitHtml.innerHTML = `
-    <div class="flex justify-between items-center mb-2">
-      <input type="text" placeholder="Unit Label" class="unit-label bg-gray-600 text-white p-2 rounded-md w-full" value="${unitData.label || ''}">
-      <button type="button" class="delete-unit text-red-500">
-        <i class="fas fa-times-circle"></i>
-      </button>
-    </div>
-    <div class="fields-container"></div>
-    <button type="button" class="add-field-editable bg-green-500 px-3 py-1 rounded-md mt-0">
+      <div class="flex justify-between items-center mb-2">
+        <input type="text" placeholder="Unit Label" class="unit-label bg-gray-600 text-white p-2 rounded-md w-full" value="${unitData.label || ''}">
+        <button type="button" class="delete-unit text-red-500">
+          <i class="fas fa-times-circle"></i>
+        </button>
+      </div>
+      <div class="fields-container"></div>
+      <button type="button" class="add-field-editable bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center">
       ✍️ Add Field
-    </button>
-  `;
-    // Delete unit event
+      </button>
+    `;
+    // Delete unit with autoscroll
     unitHtml.querySelector('.delete-unit').addEventListener('click', (e) => {
-        e.preventDefault();
-        unitHtml.classList.add('animate__fadeOut');
-        setTimeout(() => {
-            const previousSibling = unitHtml.previousElementSibling || unitHtml.parentElement;
-            unitHtml.remove();
-            previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-    })
-    const fieldsContainer = unitHtml.querySelector('.fields-container');
-    // Render existing fields if any (editable fields)
-    if (unitData.fields && unitData.fields.length > 0) {
-        unitData.fields.forEach(field => {
-            renderDynamicField(fieldsContainer, field);
-        });
-    }
-    // Add Field button for editable unit
-    unitHtml.querySelector('.add-field-editable').addEventListener('click', (e) => {
-        e.preventDefault();
-        // For new fields in an editable unit, use your existing renderDynamicField function
-        renderDynamicField(fieldsContainer, {}); // empty field object
-        const newField = fieldsContainer.lastElementChild;
-        if (newField) {
-            newField.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
+      e.preventDefault();
+      unitHtml.classList.add('animate__fadeOut');
+      setTimeout(() => {
+        const sibling = unitHtml.previousElementSibling || unitHtml.parentElement;
+        unitHtml.remove();
+        if (sibling) {
+          sibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+      }, 300);
+    });
+    const fieldsContainer = unitHtml.querySelector('.fields-container');
+    if (unitData.fields && unitData.fields.length > 0) {
+      unitData.fields.forEach(field => {
+        renderDynamicField(fieldsContainer, field);
+      });
+    }
+    // Add Field button with green styling and script emoji
+    unitHtml.querySelector('.add-field-editable').addEventListener('click', (e) => {
+      e.preventDefault();
+      renderDynamicField(fieldsContainer, {});
+      const newField = fieldsContainer.lastElementChild;
+      if (newField) {
+        newField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     });
     unitsContainer.appendChild(unitHtml);
-    unitHtml.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
+    unitHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
+// Add a helper to extract unit data from an existing DOM unit element
+function getUnitDataFromElement(unitElement) {
+    const label = unitElement.querySelector('.unit-label') ? unitElement.querySelector('.unit-label').value : "";
+    const fields = [];
+    unitElement.querySelectorAll('.field-entry').forEach(fieldEntry => {
+        const fieldLabelInput = fieldEntry.querySelector('.field-label-input');
+        const fieldLabel = fieldLabelInput ? fieldLabelInput.value : "";
+        const fieldValueInput = fieldEntry.querySelector('.field-value');
+        const fieldType = fieldValueInput ? fieldValueInput.getAttribute('data-type') : "text";
+        const fieldOptionsInput = fieldEntry.querySelector('.field-options');
+        const fieldOptions = fieldOptionsInput ? fieldOptionsInput.value : "";
+        fields.push({ label: fieldLabel, type: fieldType, options: fieldOptions });
     });
+    return { label, fields };
 }
 
 // New function: addEditableTrack creates a new (editable) track with no default unit.
 function addEditableTrack(container) {
     const newTrack = {
-        label: "", // editable track name
-        units: [], // start with no units
-        isPrefilled: false
+      label: "",
+      units: [],
+      isPrefilled: false
     };
     const trackHtml = document.createElement('div');
-    // Use the same classes as in your Template Builder for track boxes
     trackHtml.className = 'track-entry bg-gray-800 border border-gray-700 rounded-md p-4 mb-4 shadow-md animate__animated animate__fadeInUp';
     trackHtml.innerHTML = `
-    <div class="flex justify-between items-center mb-2">
-      <input type="text" placeholder="Track Name" class="track-label bg-gray-700 p-2 rounded-md flex-grow mr-2" value="${newTrack.label}">
-      <button type="button" class="delete-track text-red-500">
-        <i class="fas fa-trash"></i>
+      <div class="flex justify-between items-center mb-2">
+        <input type="text" placeholder="Track Name" class="track-label bg-gray-700 p-2 rounded-md flex-grow mr-2" value="">
+        <button type="button" class="delete-track text-red-500">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div class="units-container space-y-4"></div>
+      <button type="button" class="add-unit-editable bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md mt-4 flex items-center">
+        <i class="fas fa-plus mr-1"></i> Add Unit
       </button>
-    </div>
-    <div class="units-container space-y-4"></div>
-    <button type="button" class="add-unit-editable bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md mt-4">
-      <i class="fas fa-plus-circle mr-1"></i> Add Unit
-    </button>
-  `;
-    // Delete track event
-    trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
-        e.preventDefault();
-        trackHtml.classList.add('animate__fadeOut');
-        setTimeout(() => trackHtml.remove(), 300);
+    `;
+    const trackInput = trackHtml.querySelector('.track-label');
+    trackInput.addEventListener('focus', function() {
+      if (this.value.trim() === '') this.value = '';
     });
+    // Delete track with autoscroll
+    trackHtml.querySelector('.delete-track').addEventListener('click', (e) => {
+      e.preventDefault();
+      trackHtml.classList.add('animate__fadeOut');
+      setTimeout(() => {
+        const next = trackHtml.nextElementSibling;
+        const prev = trackHtml.previousElementSibling;
+        trackHtml.remove();
+        if (next) {
+          next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (prev) {
+          prev.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    });
+    // Add unit for editable track
     const unitsContainer = trackHtml.querySelector('.units-container');
-    // Initially, no units are rendered.
-    // Add unit event for editable track: use renderDynamicUnit to add an editable unit
     trackHtml.querySelector('.add-unit-editable').addEventListener('click', (e) => {
         e.preventDefault();
-        renderDynamicUnit(unitsContainer, {
-            label: "",
-            fields: []
-        });
+        let newUnitData;
+        if (unitsContainer.children.length > 0) {
+            // Clone the structure of the last created unit within this track
+            newUnitData = cloneUnit(getUnitDataFromElement(unitsContainer.lastElementChild));
+        } else {
+            // Default skeleton if no unit exists yet
+            newUnitData = { label: "", fields: [{ label: "", type: "text", options: "" }] };
+        }
+        renderDynamicUnit(unitsContainer, newUnitData);
         const newUnit = unitsContainer.lastElementChild;
         if (newUnit) {
-            newUnit.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
+            newUnit.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
     container.appendChild(trackHtml);
-    trackHtml.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-    });
-}
-
+    trackHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
 function addDynamicUnit(unitsContainer, originalUnit) {
     const newUnitData = cloneUnit(originalUnit);
     renderPrefilledUnitNew(unitsContainer, newUnitData);
@@ -818,7 +1033,7 @@ function renderUnitEdit(unitsContainer, unitData) {
       <button type="button" class="delete-unit text-red-500"><i class="fas fa-times-circle"></i></button>
     </div>
     <div class="fields-container"></div>
-    <button type="button" class="add-field bg-green-500 px-3 py-1 rounded mt-2"> ✍️ Add Field</button>
+    <button type="button" class="add-field bg-green-600 hover:bg-green-700 px-3 py-1 rounded mt-2"> ✍️ Add Field</button>
   `;
     unitHtml.querySelector('.delete-unit').addEventListener('click', (e) => {
         e.preventDefault();
@@ -888,39 +1103,61 @@ function renderTracksForEdit(tracks) {
 }
 
 /***** Dynamic Field Rendering *****/
-function renderDynamicFieldNew(fieldsContainer, fieldData = {}) {
+function renderDynamicField(fieldsContainer, fieldData = {}) {
     const fieldHtml = document.createElement('div');
     fieldHtml.className = 'field-entry mb-2 animate__animated animate__fadeInUp';
-    const labelText = fieldData.label || "";
-    const typeText = fieldData.type || "text";
-    const optionsText = fieldData.options || "";
-    // Determine an emoji based on the field type
-    const fieldEmoji = typeText === 'date' ? '📆' :
-        typeText === 'number' ? '🔢' :
-        typeText === 'checkbox' ? '☑️' : '📌';
     fieldHtml.innerHTML = `
-    <div class="flex items-center space-x-2">
-      <span class="prefilled-field-label font-semibold text-gray-300">${fieldEmoji} ${labelText}</span>
-      <button type="button" class="delete-field text-red-500"><i class="fas fa-trash"></i></button>
-    </div>
-    <div class="mt-2 field-input"></div>
-  `;
+      <div class="flex justify-between items-center mb-2">
+        <input type="text" placeholder="Field Label" class="field-label-input bg-gray-600 p-2 rounded-md flex-grow" value="${fieldData.label || ''}">
+        <button type="button" class="delete-field text-red-500 ml-2">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div class="flex flex-col md:flex-row md:items-center md:gap-4 gap-2">
+        <select class="field-type bg-gray-600 p-2 rounded-md w-full md:w-auto">
+          <option value="text" ${!fieldData.type || fieldData.type === 'text' ? 'selected' : ''}>Text</option>
+          <option value="number" ${fieldData.type === 'number' ? 'selected' : ''}>Number</option>
+          <option value="date" ${fieldData.type === 'date' ? 'selected' : ''}>Date</option>
+          <option value="textarea" ${fieldData.type === 'textarea' ? 'selected' : ''}>Textarea</option>
+          <option value="checkbox" ${fieldData.type === 'checkbox' ? 'selected' : ''}>Checkbox</option>
+          <option value="select" ${fieldData.type === 'select' ? 'selected' : ''}>Select</option>
+        </select>
+        <input type="text" placeholder="Options (comma-separated)" class="field-options bg-gray-600 p-2 rounded-md w-full md:w-auto ${fieldData.type === 'select' ? '' : 'hidden'}" value="${fieldData.options || ''}">
+        <div class="field-input flex-grow"></div>
+      </div>
+    `;
     fieldsContainer.appendChild(fieldHtml);
-    fieldHtml.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
+    fieldHtml.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const fieldLabelInput = fieldHtml.querySelector('.field-label-input');
+    fieldLabelInput.addEventListener('focus', function() {
+      if (this.value.trim() === '') this.value = '';
     });
-    updateDynamicInput(typeText, fieldHtml.querySelector('.field-input'), "", optionsText);
+    const typeSelect = fieldHtml.querySelector('.field-type');
+    const optionsInput = fieldHtml.querySelector('.field-options');
+    const fieldInputContainer = fieldHtml.querySelector('.field-input');
+    updateDynamicInput(typeSelect.value, fieldInputContainer, fieldData.value || '', optionsInput.value);
+    typeSelect.addEventListener('change', () => {
+      optionsInput.classList.toggle('hidden', typeSelect.value !== 'select');
+      updateDynamicInput(typeSelect.value, fieldInputContainer, '', optionsInput.value);
+    });
+    optionsInput.addEventListener('input', () => {
+      if (typeSelect.value === 'select') {
+        updateDynamicInput('select', fieldInputContainer, '', optionsInput.value);
+      }
+    });
     fieldHtml.querySelector('.delete-field').addEventListener('click', (e) => {
-        e.preventDefault();
-        fieldHtml.classList.add('animate__fadeOut');
-        setTimeout(() => {
-            const previousSibling = fieldHtml.previousElementSibling || fieldHtml.parentElement;
-            fieldHtml.remove();
-            previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-    });    
-}
+      e.preventDefault();
+      fieldHtml.classList.add('animate__fadeOut');
+      setTimeout(() => {
+        const sibling = fieldHtml.previousElementSibling || fieldHtml.parentElement;
+        fieldHtml.remove();
+        if (sibling) {
+          sibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    });
+  }
+  
 
 function renderDynamicField(fieldsContainer, fieldData = {}) {
     const fieldHtml = document.createElement('div');
@@ -1073,85 +1310,125 @@ function getLogEntryFormData() {
     };
 }
 
+// Helper functions to determine if a field/unit/track is empty
+function isEmptyField(field) {
+  return !field.label.trim();
+}
+function isEmptyUnit(unit) {
+  return !unit.label.trim() && (!unit.fields || unit.fields.every(isEmptyField));
+}
+function isEmptyTrack(track) {
+  return !track.label.trim() && (!track.units || track.units.every(isEmptyUnit));
+}
+
+// New: Normalize and extract only the structural parts of the log entry
 function extractStructureFromLog(log) {
-    let structure = [];
-    log.tracks.forEach(track => {
-        let newTrack = {
-            label: track.label,
-            units: []
-        };
-        track.units.forEach(unit => {
-            let newUnit = {
-                label: unit.label,
-                fields: []
-            };
-            unit.fields.forEach(field => {
-                newUnit.fields.push({
-                    label: field.label,
-                    type: field.type,
-                    options: field.options || ""
-                });
-            });
-            newTrack.units.push(newUnit);
-        });
-        structure.push(newTrack);
+  // Map and trim the structure from the log entry
+  let structure = log.tracks.map(track => ({
+    label: track.label.trim(),
+    units: track.units.map(unit => ({
+      label: unit.label.trim(),
+      fields: unit.fields.map(field => ({
+        label: field.label.trim(),
+        type: field.type.trim(),
+        options: field.options.trim()
+      }))
+    }))
+  }));
+  
+  // Filter out entirely empty tracks
+  structure = structure.filter(track => !isEmptyTrack(track));
+  
+  // For each track, filter out empty units and fields
+  structure.forEach(track => {
+    track.units = track.units.filter(unit => !isEmptyUnit(unit));
+    track.units.forEach(unit => {
+      unit.fields = unit.fields.filter(field => !isEmptyField(field));
     });
-    return structure;
+    
+    // If all units in a track are identical, reduce to a single instance.
+    if (track.units.length > 1) {
+      const firstUnitStr = JSON.stringify(track.units[0]);
+      const allIdentical = track.units.every(unit => JSON.stringify(unit) === firstUnitStr);
+      if (allIdentical) {
+        track.units = [track.units[0]];
+      }
+    }
+  });
+  
+  return structure;
 }
 
-function saveNewLogEntry() {
-    const newLog = getLogEntryFormData();
-    let templateUpdated = false;
-    if (JSON.stringify(extractStructureFromLog(newLog)) !== JSON.stringify(template)) {
-        if (confirm("Your daily log structure differs from the current template. Update template with the new structure?")) {
-            template = extractStructureFromLog(newLog);
-            renderTemplateTracks();
-            templateUpdated = true;
-        }
+
+// Updated: Save New Log Entry with conditional structure verification
+async function saveNewLogEntry() {
+  const newLog = getLogEntryFormData();
+  let templateUpdated = false;
+  
+  // Only compare if the template already exists
+  if (template.length > 0 && JSON.stringify(extractStructureFromLog(newLog)) !== JSON.stringify(template)) {
+    const userConfirmed = await showStructureConfirmModal();
+    if (userConfirmed) {
+      // Update the template with the normalized structure
+      template = extractStructureFromLog(newLog);
+      renderTemplateTracks();
+      templateUpdated = true;
     }
-    logs.unshift(newLog);
-    saveCloudData();
-    renderLogEntries();
-    document.getElementById('logEntryForm').classList.add('hidden');
-    showFeedback('Log Entry Saved!');
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-    if (templateUpdated) {
-        setTimeout(() => {
-            showFeedback('Template Updated Successfully!', 'info');
-        }, 1600);
-    }
+  } else if (template.length === 0) {
+    // First load: set template silently
+    template = extractStructureFromLog(newLog);
+    renderTemplateTracks();
+  }
+  
+  logs.unshift(newLog);
+  saveCloudData();
+  renderLogEntries();
+  document.getElementById('logEntryForm').classList.add('hidden');
+  showFeedback('Log Entry Saved!');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  if (templateUpdated) {
+    setTimeout(() => {
+      showFeedback('Template Updated Successfully!', 'info');
+    }, 1600);
+  }
 }
 
-function saveEditedLogEntry(originalLog) {
-    const updatedLog = getLogEntryFormData();
-    let templateUpdated = false;
-    if (JSON.stringify(extractStructureFromLog(updatedLog)) !== JSON.stringify(template)) {
-        if (confirm("Your daily log structure differs from the current template. Update template with the new structure?")) {
-            template = extractStructureFromLog(updatedLog);
-            renderTemplateTracks();
-            templateUpdated = true;
-        }
+// Updated: Save Edited Log Entry with conditional structure verification
+async function saveEditedLogEntry(originalLog) {
+  const updatedLog = getLogEntryFormData();
+  let templateUpdated = false;
+  
+  if (template.length > 0 && JSON.stringify(extractStructureFromLog(updatedLog)) !== JSON.stringify(template)) {
+    const userConfirmed = await showStructureConfirmModal();
+    if (userConfirmed) {
+      template = extractStructureFromLog(updatedLog);
+      renderTemplateTracks();
+      templateUpdated = true;
     }
-    const index = logs.findIndex(log => log.date === originalLog.date && log.dailyNotes === originalLog.dailyNotes);
-    if (index !== -1) logs[index] = updatedLog;
-    else logs.unshift(updatedLog);
-    saveCloudData();
-    renderLogEntries();
-    document.getElementById('logEntryForm').classList.add('hidden');
-    showFeedback('Log Entry Updated!');
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-    if (templateUpdated) {
-        setTimeout(() => {
-            showFeedback('Template Updated Successfully!', 'info');
-        }, 1600);
-    }
+  } else if (template.length === 0) {
+    template = extractStructureFromLog(updatedLog);
+    renderTemplateTracks();
+  }
+  
+  const index = logs.findIndex(log => log.date === originalLog.date && log.dailyNotes === originalLog.dailyNotes);
+  if (index !== -1) logs[index] = updatedLog;
+  else logs.unshift(updatedLog);
+  
+  saveCloudData();
+  renderLogEntries();
+  document.getElementById('logEntryForm').classList.add('hidden');
+  showFeedback('Log Entry Updated!');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  if (templateUpdated) {
+    setTimeout(() => {
+      showFeedback('Template Updated Successfully!', 'info');
+    }, 1600);
+  }
 }
+
+
 
 function renderLogEntries(filteredLogs = logs) {
     const logEntriesDiv = document.getElementById('logEntries');
@@ -1253,9 +1530,11 @@ function renderLogEntries(filteredLogs = logs) {
 }
 
 function editLogEntry(logIndex) {
+    closeAllPopups();
     const log = logs[logIndex];
     renderLogEntryForm('edit', log);
-}
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }  
 
 /***** Search Functionality *****/
 function logMatchesSearch(log, term) {
@@ -1303,13 +1582,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.getElementById('closeTemplateBuilder')?.addEventListener('click', () => {
-        const templateBuilder = document.getElementById('templateBuilder');
-        templateBuilder.classList.add('animate__fadeOut');
-        setTimeout(() => {
-            templateBuilder.classList.add('hidden');
-            templateBuilder.classList.remove('animate__fadeOut');
-        }, 400);
+      updateTemplateFromDOM();
+      const savedTemplate = JSON.parse(localStorage.getItem('logtrackTemplate') || '[]');
+      const currentTemplate = JSON.parse(JSON.stringify(template));
+    
+      const hasChanges = JSON.stringify(savedTemplate) !== JSON.stringify(currentTemplate);
+    
+      if (hasChanges) {
+        document.getElementById('discardChangesModal').classList.remove('hidden');
+      } else {
+        closeTemplateBuilderDirectly();
+      }
     });
+    
+    document.getElementById('confirmDiscardBtn').addEventListener('click', () => {
+      const savedTemplate = localStorage.getItem('logtrackTemplate');
+      if (savedTemplate) {
+        template = JSON.parse(savedTemplate);
+        renderTemplateTracks();
+      }
+      document.getElementById('discardChangesModal').classList.add('hidden');
+      closeTemplateBuilderDirectly();
+    });
+    
+    document.getElementById('cancelDiscardBtn').addEventListener('click', () => {
+      document.getElementById('discardChangesModal').classList.add('hidden');
+    });
+    
+    function closeTemplateBuilderDirectly() {
+      const templateBuilder = document.getElementById('templateBuilder');
+      templateBuilder.classList.add('animate__fadeOut');
+      setTimeout(() => {
+        templateBuilder.classList.add('hidden');
+        templateBuilder.classList.remove('animate__fadeOut');
+      }, 400);
+    }    
+
     document.getElementById('newEntryButton').addEventListener('click', () => {
         const logEntryForm = document.getElementById('logEntryForm');
         const templateBuilder = document.getElementById('templateBuilder');
@@ -1403,29 +1711,53 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         if (e.target.closest('.delete-track-button')) {
-            updateTemplateFromDOM();
-            const trackIndex = e.target.closest('.delete-track-button').getAttribute('data-track-index');
-            template.splice(trackIndex, 1);
-            renderTemplateTracks();
-            saveCloudData();
-        }
+            const trackContainer = e.target.closest('.track-container');
+            trackContainer.classList.add('animate__fadeOut');
+            setTimeout(() => {
+                 updateTemplateFromDOM();
+                 const trackIndex = trackContainer.getAttribute('data-id');
+                 template.splice(trackIndex, 1);
+                 renderTemplateTracks();
+                 saveCloudData();
+                 // Scroll to the top of the next or previous track
+                 const nextTrack = trackContainer.nextElementSibling;
+                 const previousTrack = trackContainer.previousElementSibling;
+                 if (nextTrack) {
+                     nextTrack.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                 } else if (previousTrack) {
+                     previousTrack.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                 }
+            }, 300);
+        }           
         if (e.target.closest('.delete-unit-button')) {
-            updateTemplateFromDOM();
-            const trackIndex = e.target.closest('.delete-unit-button').getAttribute('data-track-index');
-            const unitIndex = e.target.closest('.delete-unit-button').getAttribute('data-unit-index');
-            template[trackIndex].units.splice(unitIndex, 1);
-            renderTemplateTracks();
-            saveCloudData();
-        }
+            const unitContainer = e.target.closest('.unit-container');
+            unitContainer.classList.add('animate__fadeOut');
+            setTimeout(() => {
+                updateTemplateFromDOM();
+                const trackIndex = e.target.closest('.delete-unit-button').getAttribute('data-track-index');
+                const unitIndex = e.target.closest('.delete-unit-button').getAttribute('data-unit-index');
+                template[trackIndex].units.splice(unitIndex, 1);
+                renderTemplateTracks();
+                saveCloudData();
+                const previousSibling = unitContainer.previousElementSibling || unitContainer.parentElement;
+                previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }        
         if (e.target.closest('.delete-field-button')) {
-            updateTemplateFromDOM();
-            const tIndex = e.target.closest('.delete-field-button').getAttribute('data-track-index');
-            const uIndex = e.target.closest('.delete-field-button').getAttribute('data-unit-index');
-            const fIndex = e.target.closest('.delete-field-button').getAttribute('data-field-index');
-            template[tIndex].units[uIndex].fields.splice(fIndex, 1);
-            renderTemplateTracks();
-            saveCloudData();
-        }
+            const fieldContainer = e.target.closest('.field-container');
+            fieldContainer.classList.add('animate__fadeOut');
+            setTimeout(() => {
+                updateTemplateFromDOM();
+                const tIndex = e.target.closest('.delete-field-button').getAttribute('data-track-index');
+                const uIndex = e.target.closest('.delete-field-button').getAttribute('data-unit-index');
+                const fIndex = e.target.closest('.delete-field-button').getAttribute('data-field-index');
+                template[tIndex].units[uIndex].fields.splice(fIndex, 1);
+                renderTemplateTracks();
+                saveCloudData();
+                const previousSibling = fieldContainer.previousElementSibling || fieldContainer.parentElement;
+                previousSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }        
     });
     document.getElementById('templateTracks').addEventListener('change', (e) => {
         if (e.target && e.target.classList.contains('field-type')) {
@@ -1447,25 +1779,146 @@ document.addEventListener('DOMContentLoaded', () => {
             behavior: 'smooth'
         });
     });
+// Open the Settings Modal when the settings button is clicked
+document.getElementById('settingsButton').addEventListener('click', () => {
+    // Remove any inline Change Email form if it exists
+    const existingForm = document.getElementById('changeEmailForm');
+    if (existingForm) {
+      existingForm.remove();
+    }
+    // Update user email, then show modal
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+      if (session && session.user) {
+        document.getElementById('userEmail').textContent = session.user.email;
+      }
+    });
+    document.getElementById('settingsModal').classList.remove('hidden');
+  });  
+
+// Close the Settings Modal when clicking on the close (X) button
+document.getElementById('closeSettings').addEventListener('click', () => {
+    document.getElementById('settingsModal').classList.add('hidden');
+});
+
+// Close the modal if clicking anywhere outside the modal content
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('settingsModal')) {
+        document.getElementById('settingsModal').classList.add('hidden');
+    }
+});
+
+// Handle the Change Email button to toggle an inline change email form within the modal
+document.getElementById('changeEmailButton').addEventListener('click', () => {
+    const modalContent = document.querySelector('#settingsModal .modal-content');
+    // Toggle: if the change email form doesn't exist, insert it; if it does, remove it.
+    if (!document.getElementById('changeEmailForm')) {
+        modalContent.insertAdjacentHTML('beforeend', `
+          <form id="changeEmailForm" class="mt-4 space-y-4">
+            <div>
+              <label for="newEmail" class="block font-semibold mb-1">New Email</label>
+              <input type="email" id="newEmail" class="w-full p-3 bg-gray-700 rounded" placeholder="Enter new email" required>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded font-semibold">Submit</button>
+          </form>
+        `);
+        document.getElementById('changeEmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newEmail = document.getElementById('newEmail').value;
+            const { error } = await supabaseClient.auth.updateUser({ email: newEmail });
+            if (error) {
+                alert("Error updating email: " + error.message);
+            } else {
+                alert("Email updated! Please check your email for confirmation.");
+                document.getElementById('settingsModal').classList.add('hidden');
+                // Remove the inline form after successful submission
+                document.getElementById('changeEmailForm').remove();
+            }
+        });
+    } else {
+        // Remove the form if it's already visible (toggle off)
+        document.getElementById('changeEmailForm').remove();
+    }
+});
+
+// Handle the Reset Password button using Supabase's functionality (now in purple)
+document.getElementById('resetPasswordButton').addEventListener('click', async () => {
+    const email = document.getElementById('userEmail').textContent;
+    if (email) {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.href
+        });
+        if (error) alert(error.message);
+        else alert("Password reset email sent! Please check your inbox.");
+    }
+});
+
+// Listen for export format changes in the Settings modal
+document.querySelectorAll('input[name="exportFormat"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      selectedExportFormat = e.target.value;
+      // Optionally update preview on format change
+    });
+  });
+  
+  // Handle the Preview Export button click
+  document.getElementById('previewExportButton').addEventListener('click', () => {
+    updateExportPreview();
+  });
+  
+  document.getElementById('exportFormatSelect').addEventListener('change', (e) => {
+    selectedExportFormat = e.target.value;
+  });
+
+// Bind the Save Settings button (saves the chosen export format to localStorage)
+document.getElementById('saveSettingsButton').addEventListener('click', () => {
+    localStorage.setItem('exportFormat', selectedExportFormat);
+    showFeedback('Settings Saved!', 'success');
+    // Automatically close the settings modal
+    document.getElementById('settingsModal').classList.add('hidden');
+  });  
     document.getElementById('searchBar').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = logs.filter(log => logMatchesSearch(log, term));
         renderLogEntries(filtered);
     });
-    document.getElementById('exportButton').addEventListener('click', () => {
-        const dataStr = JSON.stringify({
-            template,
-            logs
-        }, null, 2);
-        const blob = new Blob([dataStr], {
-            type: "application/json"
-        });
+    document.getElementById('exportButton').addEventListener('click', async () => {
+        let format = selectedExportFormat || "json";
+        let fileName, mimeType, blob;
+        
+        if (format === "json") {
+          const dataStr = JSON.stringify({ template, logs }, null, 2);
+          fileName = `logtrack-export-${new Date().toISOString().split('T')[0]}.json`;
+          mimeType = "application/json";
+          blob = new Blob([dataStr], { type: mimeType });
+        } else if (format === "csv") {
+          const dataStr = exportLogsAsCSV(logs);
+          fileName = `logtrack-export-${new Date().toISOString().split('T')[0]}.csv`;
+          mimeType = "text/csv";
+          blob = new Blob([dataStr], { type: mimeType });
+        } else if (format === "txt") {
+          const dataStr = exportLogsAsTXT(logs);
+          fileName = `logtrack-export-${new Date().toISOString().split('T')[0]}.txt`;
+          mimeType = "text/plain";
+          blob = new Blob([dataStr], { type: mimeType });
+        } else if (format === "md") {
+          const dataStr = exportLogsAsMD(logs);
+          fileName = `logtrack-export-${new Date().toISOString().split('T')[0]}.md`;
+          mimeType = "text/markdown";
+          blob = new Blob([dataStr], { type: mimeType });
+        } else if (format === "pdf") {
+          fileName = `logtrack-export-${new Date().toISOString().split('T')[0]}.pdf`;
+          blob = await exportLogsAsPDF(logs);
+        } else if (format === "docx") {
+          fileName = `logtrack-export-${new Date().toISOString().split('T')[0]}.docx`;
+          blob = await exportLogsAsDOCX(logs);
+        }
+        
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `logtrack-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = fileName;
         a.click();
         URL.revokeObjectURL(url);
         showFeedback('Logs Exported Successfully!', 'download');
-    });
+      });      
 });
